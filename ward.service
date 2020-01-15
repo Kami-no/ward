@@ -1,0 +1,11 @@
+[Unit]
+Description=GitLab Ward
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+WorkingDirectory=/opt/ward
+ExecStart=/opt/ward/ward
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+---
+GProject: 123
+GToken: string
+GURL: string
+GUser: string
+MBad: string
+MGood: string
+VBackend:
+  - user1
+  - user2
+VFrontend:
+  - user1
+  - user2
