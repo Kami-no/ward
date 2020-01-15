@@ -13,7 +13,9 @@ type config struct {
 	GURL      string   `yaml:"GURL"`
 	GUser     string   `yaml:"GUser"`
 	MBad      string   `yaml:"MBad"`
+	MDown     string   `yaml:"MDown"`
 	MGood     string   `yaml:"MGood"`
+	MUp       string   `yaml:"MUp"`
 	VBackend  []string `yaml:"VBackend"`
 	VFrontend []string `yaml:"VFrontend"`
 }

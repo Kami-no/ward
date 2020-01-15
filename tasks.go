@@ -38,41 +38,40 @@ func trackOpenedMR(cfg config) {
 
 		state_good := 0
 		state_bad := 0
+		state_down := 0
 
 		awards, _, _ := git.AwardEmoji.ListMergeRequestAwardEmoji(mr.ProjectID, mr.IID, &gitlab.ListAwardEmojiOptions{})
 		for _, award := range awards {
-			if vip_f == 0 {
-				if contains(cfg.VFrontend, award.User.Username) {
-					vip_f = 1
-				}
-			}
-			if vip_b == 0 {
-				if contains(cfg.VBackend, award.User.Username) {
-					vip_b = 1
+			if award.User.Username != mr.Author.Username {
+				switch award.Name {
+				case cfg.MUp:
+					if vip_f == 0 {
+						if contains(cfg.VFrontend, award.User.Username) {
+							vip_f = 1
+						}
+					}
+					if vip_b == 0 {
+						if contains(cfg.VBackend, award.User.Username) {
+							vip_b = 1
+						}
+					}
+				case cfg.MDown:
+					state_down = 1
 				}
 			}
 
 			if award.User.Username == cfg.GUser {
-				if award.Name == cfg.MGood {
+				switch award.Name {
+				case cfg.MGood:
 					state_good = award.ID
-				}
-				if award.Name == cfg.MBad {
+				case cfg.MBad:
 					state_bad = award.ID
 				}
 			}
-
 		}
 
-		if vip_f+vip_b == 2 {
-			if state_bad != 0 {
-				_, _ = git.AwardEmoji.DeleteMergeRequestAwardEmoji(mr.ProjectID, mr.IID, state_bad)
-			}
-			if state_good == 0 {
-				award_opts := &gitlab.CreateAwardEmojiOptions{Name: cfg.MGood}
-				_, _, _ = git.AwardEmoji.CreateMergeRequestAwardEmoji(mr.ProjectID, mr.IID, award_opts)
-				log.Printf("MR %v is ready.", mr.IID)
-			}
-		} else {
+		switch {
+		case vip_f+vip_b != 2, state_down == 1:
 			if state_good != 0 {
 				_, _ = git.AwardEmoji.DeleteMergeRequestAwardEmoji(mr.ProjectID, mr.IID, state_good)
 			}
@@ -81,6 +80,16 @@ func trackOpenedMR(cfg config) {
 				_, _, _ = git.AwardEmoji.CreateMergeRequestAwardEmoji(mr.ProjectID, mr.IID, award_opts)
 				log.Printf("MR %v is not ready.", mr.IID)
 			}
+		default:
+			if state_bad != 0 {
+				_, _ = git.AwardEmoji.DeleteMergeRequestAwardEmoji(mr.ProjectID, mr.IID, state_bad)
+			}
+			if state_good == 0 {
+				award_opts := &gitlab.CreateAwardEmojiOptions{Name: cfg.MGood}
+				_, _, _ = git.AwardEmoji.CreateMergeRequestAwardEmoji(mr.ProjectID, mr.IID, award_opts)
+				log.Printf("MR %v is ready.", mr.IID)
+			}
 		}
+
 	}
 }
