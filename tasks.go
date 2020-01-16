@@ -6,15 +6,6 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
-func contains(arr []string, str string) bool {
-	for _, a := range arr {
-		if a == str {
-			return true
-		}
-	}
-	return false
-}
-
 func trackOpenedMR(cfg config) {
 	git := gitlab.NewClient(nil, cfg.GToken)
 	_ = git.SetBaseURL(cfg.GURL)
@@ -90,6 +81,5 @@ func trackOpenedMR(cfg config) {
 				log.Printf("MR %v is ready.", mr.IID)
 			}
 		}
-
 	}
 }
