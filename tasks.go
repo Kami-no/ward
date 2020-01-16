@@ -32,6 +32,8 @@ func trackOpenedMR(cfg config) {
 		state_down := 0
 
 		awards, _, _ := git.AwardEmoji.ListMergeRequestAwardEmoji(mr.ProjectID, mr.IID, &gitlab.ListAwardEmojiOptions{})
+
+	Loop:
 		for _, award := range awards {
 			if award.User.Username != mr.Author.Username {
 				switch award.Name {
@@ -48,6 +50,7 @@ func trackOpenedMR(cfg config) {
 					}
 				case cfg.MDown:
 					state_down = 1
+					break Loop
 				}
 			}
 
