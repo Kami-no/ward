@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	var cfg  config
+	var cfg config
 	cfg.getConfig()
 
 	s, err := scheduler.NewScheduler(1000)
