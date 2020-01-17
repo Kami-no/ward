@@ -86,3 +86,76 @@ func trackOpenedMR(cfg config) {
 		}
 	}
 }
+
+func trackMergedMR(cfg config) {
+	git := gitlab.NewClient(nil, cfg.GToken)
+	_ = git.SetBaseURL(cfg.GURL)
+
+	mrs_opts := &gitlab.ListProjectMergeRequestsOptions{
+		State:   gitlab.String("merged"),
+		OrderBy: gitlab.String("updated_at"),
+		Scope:   gitlab.String("all"),
+		ListOptions: gitlab.ListOptions{
+			PerPage: 10,
+			Page:    1,
+		},
+	}
+
+	mrs, _, _ := git.MergeRequests.ListProjectMergeRequests(cfg.GProject, mrs_opts)
+
+	for _, mr := range mrs {
+		vip_f := 0
+		vip_b := 0
+
+		state_down := 0
+		state_done := 0
+		state_fail := 0
+
+		awards, _, _ := git.AwardEmoji.ListMergeRequestAwardEmoji(mr.ProjectID, mr.IID, &gitlab.ListAwardEmojiOptions{})
+
+		for _, award := range awards {
+			if award.User.Username != mr.Author.Username {
+				switch award.Name {
+				case cfg.MUp:
+					if vip_f == 0 {
+						if contains(cfg.VFrontend, award.User.Username) {
+							vip_f = 1
+						}
+					}
+					if vip_b == 0 {
+						if contains(cfg.VBackend, award.User.Username) {
+							vip_b = 1
+						}
+					}
+				case cfg.MDown:
+					state_down = 1
+				}
+			}
+
+			if award.User.Username == cfg.GUser {
+				switch award.Name {
+				case cfg.MGood:
+					_, _ = git.AwardEmoji.DeleteMergeRequestAwardEmoji(mr.ProjectID, mr.IID, award.ID)
+				case cfg.MBad:
+					_, _ = git.AwardEmoji.DeleteMergeRequestAwardEmoji(mr.ProjectID, mr.IID, award.ID)
+				case cfg.MDone:
+					state_done = award.ID
+				case cfg.MFail:
+					state_fail = award.ID
+				}
+			}
+		}
+
+		switch {
+		case state_done != 0, state_fail != 0:
+		case vip_f+vip_b != 2, state_down == 1:
+			award_opts := &gitlab.CreateAwardEmojiOptions{Name: cfg.MFail}
+			_, _, _ = git.AwardEmoji.CreateMergeRequestAwardEmoji(mr.ProjectID, mr.IID, award_opts)
+			log.Printf("MR %v is merged and has failed CC !!!", mr.IID)
+		default:
+			award_opts := &gitlab.CreateAwardEmojiOptions{Name: cfg.MDone}
+			_, _, _ = git.AwardEmoji.CreateMergeRequestAwardEmoji(mr.ProjectID, mr.IID, award_opts)
+			log.Printf("MR %v is merged and kosher.", mr.IID)
+		}
+	}
+}

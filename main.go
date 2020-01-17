@@ -20,6 +20,7 @@ func main() {
 		panic(err)
 	}
 	s.Every().Second(0).Do(trackOpenedMR, cfg)
+	s.Every().Second(30).Do(trackMergedMR, cfg)
 
 	http.HandleFunc("/", handler)
 

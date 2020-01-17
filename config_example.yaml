@@ -3,8 +3,12 @@ GProject: 123
 GToken: string
 GURL: string
 GUser: string
-MBad: string
-MGood: string
+MBad: x
+MDone: trophy
+MDown: thumbsdown
+MFail: poop
+MGood: heavy_check_mark
+MUp: thumbsup
 VBackend:
   - user1
   - user2
