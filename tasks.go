@@ -6,7 +6,7 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
-func trackOpenedMR(cfg config) {
+func detectOpenedMR(cfg config) {
 	git := gitlab.NewClient(nil, cfg.GToken)
 	_ = git.SetBaseURL(cfg.GURL)
 
@@ -87,7 +87,7 @@ func trackOpenedMR(cfg config) {
 	}
 }
 
-func trackMergedMR(cfg config) {
+func detectMergedMR(cfg config) {
 	var email []string
 	var ownersEmail []string
 

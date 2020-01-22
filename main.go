@@ -19,8 +19,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	s.Every().Second(0).Do(trackOpenedMR, cfg)
-	s.Every().Second(30).Do(trackMergedMR, cfg)
+	s.Every().Second(0).Do(detectOpenedMR, cfg)
+	s.Every().Second(30).Do(detectMergedMR, cfg)
 
 	http.HandleFunc("/", handler)
 
