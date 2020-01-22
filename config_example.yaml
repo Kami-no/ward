@@ -1,14 +1,22 @@
 ---
 GProject: 123
 GToken: string
-GURL: string
-GUser: string
+GURL: https://git.example.com/api/v4/
+GUser: user
+LBase: DC=ad,DC=example,DC=com
+LHost: ad.example.com:389
+LPass: qwerty
+LUser: user@ad.example.com
 MBad: x
-MDone: trophy
 MDown: thumbsdown
 MFail: poop
 MGood: heavy_check_mark
 MUp: thumbsup
+SHost: smtp.example.com
+SMail: user@example.com
+SPass: qwerty
+SPort: 587
+SUser: user
 VBackend:
   - user1
   - user2
