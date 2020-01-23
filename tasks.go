@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/xanzy/go-gitlab"
 )
@@ -165,5 +167,38 @@ func detectMergedMR(cfg config) {
 			award_opts := &gitlab.CreateAwardEmojiOptions{Name: cfg.MFail}
 			_, _, _ = git.AwardEmoji.CreateMergeRequestAwardEmoji(mr.ProjectID, mr.IID, award_opts)
 		}
+	}
+}
+
+func detectDeadBrunches(cfg config) {
+	now := time.Now()
+
+	git := gitlab.NewClient(nil, cfg.GToken)
+	_ = git.SetBaseURL(cfg.GURL)
+
+	branches_opts := &gitlab.ListBranchesOptions{
+		ListOptions: gitlab.ListOptions{
+			PerPage: 10,
+			Page:    1,
+		},
+	}
+
+	for {
+		branches, response, _ := git.Branches.ListBranches(cfg.GProject, branches_opts)
+
+		for _, branch := range branches {
+			updated := *branch.Commit.AuthoredDate
+			if now.Sub(updated).Hours() >= 7*24 {
+				url := fmt.Sprintf("%v/tree/%v", cfg.GPUrl, branch.Name)
+				mailBranches(cfg, branch.Commit.AuthorEmail, url, branch.Name)
+				log.Printf("Branch is too old: %v %v %v", branch.Name, branch.Commit.AuthorEmail, updated)
+			}
+		}
+
+		if response.CurrentPage >= response.TotalPages {
+			log.Println("---")
+			break
+		}
+		branches_opts.Page = response.NextPage
 	}
 }

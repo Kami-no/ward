@@ -1,5 +1,6 @@
 ---
 GProject: 123
+GPUrl: https://git.example.com/my-group/my-repo
 GToken: string
 GURL: https://git.example.com/api/v4/
 GUser: user
