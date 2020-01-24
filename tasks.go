@@ -92,6 +92,8 @@ func detectOpenedMR(cfg config) {
 func detectMergedMR(cfg config) {
 	var email []string
 	var ownersEmail []string
+	var subj  string
+	var msg string
 
 	git := gitlab.NewClient(nil, cfg.GToken)
 	_ = git.SetBaseURL(cfg.GURL)
@@ -152,7 +154,16 @@ func detectMergedMR(cfg config) {
 		case state_fail != 0:
 		case vip_f+vip_b != 2, state_down == 1:
 			email = ldapMail(cfg, mr.MergedBy.Username)
-			mailMergeman(cfg, email[0], mr.WebURL, mr.IID)
+			subj = "Code of Conduct failure incident"
+			msg = fmt.Sprintf("Hello,"+
+				"<p>By merging <a href='%v'>Merge Request #%v</a> without 2 qualified approves"+
+				" or negative review you've failed repository's Code of Conduct.</p>"+
+				"<p>This incident will be reported.</p>", mr.WebURL, mr.IID)
+
+			if err := mailSend(cfg, email, subj, msg); err != nil {
+				log.Println(err)
+				break
+			}
 
 			for _, i := range cfg.VBackend {
 				ownersEmail = append(ownersEmail, ldapMail(cfg, i)...)
@@ -160,7 +171,15 @@ func detectMergedMR(cfg config) {
 			for _, i := range cfg.VFrontend {
 				ownersEmail = append(ownersEmail, ldapMail(cfg, i)...)
 			}
-			mailMaintainers(cfg, ownersEmail, mr.WebURL, mr.IID)
+			subj = fmt.Sprintf("MR %v has failed requirements!", mr.IID)
+			msg = fmt.Sprintf(
+				"<p><a href='%v'>Merge Request #%v</a> does not meet requirements but it was merged!</p>",
+				mr.WebURL, mr.IID)
+
+			if err := mailSend(cfg, ownersEmail, subj, msg); err != nil {
+				log.Println(err)
+				break
+			}
 
 			log.Printf("MR %v is merged and has failed CC !!!", mr.IID)
 
@@ -189,8 +208,18 @@ func detectDeadBrunches(cfg config) {
 		for _, branch := range branches {
 			updated := *branch.Commit.AuthoredDate
 			if now.Sub(updated).Hours() >= 7*24 {
+				var rcpt []string
+				rcpt = append(rcpt, branch.Commit.AuthorEmail)
 				url := fmt.Sprintf("%v/tree/%v", cfg.GPUrl, branch.Name)
-				mailBranches(cfg, branch.Commit.AuthorEmail, url, branch.Name)
+				subj := fmt.Sprint("Dead branch detected!")
+				msg := fmt.Sprintf(
+					"<p>I see dead branches: <a href='%v'>%v</a></p>"+
+						"<p>If you don't need it anymore, you should delete it.</p>", url, branch.Name)
+
+				if err := mailSend(cfg, rcpt, subj, msg); err != nil {
+					log.Println(err)
+					break
+				}
 				log.Printf("Branch is too old: %v %v %v", branch.Name, branch.Commit.AuthorEmail, updated)
 			}
 		}
