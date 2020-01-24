@@ -10,7 +10,10 @@ import (
 
 func detectOpenedMR(cfg config) {
 	git := gitlab.NewClient(nil, cfg.GToken)
-	_ = git.SetBaseURL(cfg.GURL)
+	if err := git.SetBaseURL(cfg.GURL); err != nil {
+		log.Printf("Failed to setup GitLab: %v", err)
+		return
+	}
 
 	mrs_opts := &gitlab.ListProjectMergeRequestsOptions{
 		State:   gitlab.String("opened"),
@@ -23,7 +26,11 @@ func detectOpenedMR(cfg config) {
 		},
 	}
 
-	mrs, _, _ := git.MergeRequests.ListProjectMergeRequests(cfg.GProject, mrs_opts)
+	mrs, _, err := git.MergeRequests.ListProjectMergeRequests(cfg.GProject, mrs_opts)
+	if err != nil {
+		log.Printf("Failed to list Merge Requests: %v", err)
+		return
+	}
 
 	for _, mr := range mrs {
 		vip_f := 0
@@ -33,7 +40,11 @@ func detectOpenedMR(cfg config) {
 		state_bad := 0
 		state_down := 0
 
-		awards, _, _ := git.AwardEmoji.ListMergeRequestAwardEmoji(mr.ProjectID, mr.IID, &gitlab.ListAwardEmojiOptions{})
+		awards, _, err := git.AwardEmoji.ListMergeRequestAwardEmoji(mr.ProjectID, mr.IID, &gitlab.ListAwardEmojiOptions{})
+		if err != nil {
+			log.Printf("Failed to list MR awards: %v", err)
+			break
+		}
 
 	Loop:
 		for _, award := range awards {
@@ -92,11 +103,14 @@ func detectOpenedMR(cfg config) {
 func detectMergedMR(cfg config) {
 	var email []string
 	var ownersEmail []string
-	var subj  string
+	var subj string
 	var msg string
 
 	git := gitlab.NewClient(nil, cfg.GToken)
-	_ = git.SetBaseURL(cfg.GURL)
+	if err := git.SetBaseURL(cfg.GURL); err != nil {
+		log.Printf("Failed to setup GitLab: %v", err)
+		return
+	}
 
 	mrs_opts := &gitlab.ListProjectMergeRequestsOptions{
 		State:   gitlab.String("merged"),
@@ -108,7 +122,11 @@ func detectMergedMR(cfg config) {
 		},
 	}
 
-	mrs, _, _ := git.MergeRequests.ListProjectMergeRequests(cfg.GProject, mrs_opts)
+	mrs, _, err := git.MergeRequests.ListProjectMergeRequests(cfg.GProject, mrs_opts)
+	if err != nil {
+		log.Printf("Failed to list Merge Requests: %v", err)
+		return
+	}
 
 	for _, mr := range mrs {
 		vip_f := 0
@@ -117,7 +135,11 @@ func detectMergedMR(cfg config) {
 		state_down := 0
 		state_fail := 0
 
-		awards, _, _ := git.AwardEmoji.ListMergeRequestAwardEmoji(mr.ProjectID, mr.IID, &gitlab.ListAwardEmojiOptions{})
+		awards, _, err := git.AwardEmoji.ListMergeRequestAwardEmoji(mr.ProjectID, mr.IID, &gitlab.ListAwardEmojiOptions{})
+		if err != nil {
+			log.Printf("Failed to list MR awards: %v", err)
+			break
+		}
 
 		for _, award := range awards {
 			if award.User.Username != mr.Author.Username {
@@ -161,7 +183,7 @@ func detectMergedMR(cfg config) {
 				"<p>This incident will be reported.</p>", mr.WebURL, mr.IID)
 
 			if err := mailSend(cfg, email, subj, msg); err != nil {
-				log.Println(err)
+				log.Printf("Failed to send mail: %v", err)
 				break
 			}
 
@@ -177,7 +199,7 @@ func detectMergedMR(cfg config) {
 				mr.WebURL, mr.IID)
 
 			if err := mailSend(cfg, ownersEmail, subj, msg); err != nil {
-				log.Println(err)
+				log.Printf("Failed to send mail: %v", err)
 				break
 			}
 
@@ -193,7 +215,10 @@ func detectDeadBrunches(cfg config) {
 	now := time.Now()
 
 	git := gitlab.NewClient(nil, cfg.GToken)
-	_ = git.SetBaseURL(cfg.GURL)
+	if err := git.SetBaseURL(cfg.GURL); err != nil {
+		log.Printf("Failed to setup GitLab: %v", err)
+		return
+	}
 
 	branches_opts := &gitlab.ListBranchesOptions{
 		ListOptions: gitlab.ListOptions{
@@ -203,7 +228,11 @@ func detectDeadBrunches(cfg config) {
 	}
 
 	for {
-		branches, response, _ := git.Branches.ListBranches(cfg.GProject, branches_opts)
+		branches, response, err := git.Branches.ListBranches(cfg.GProject, branches_opts)
+		if err != nil {
+			log.Printf("Failed to list branches: %v", err)
+			break
+		}
 
 		for _, branch := range branches {
 			updated := *branch.Commit.AuthoredDate
@@ -217,7 +246,7 @@ func detectDeadBrunches(cfg config) {
 						"<p>If you don't need it anymore, you should delete it.</p>", url, branch.Name)
 
 				if err := mailSend(cfg, rcpt, subj, msg); err != nil {
-					log.Println(err)
+					log.Printf("Failed to send mail: %v", err)
 					break
 				}
 				log.Printf("Branch is too old: %v %v %v", branch.Name, branch.Commit.AuthorEmail, updated)
@@ -225,7 +254,6 @@ func detectDeadBrunches(cfg config) {
 		}
 
 		if response.CurrentPage >= response.TotalPages {
-			log.Println("---")
 			break
 		}
 		branches_opts.Page = response.NextPage
