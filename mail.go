@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"gopkg.in/mail.v2"
 )
 
@@ -15,7 +17,7 @@ func mailSend(cfg config, rcpt []string, subj string, msg string) error {
 	d.StartTLSPolicy = mail.MandatoryStartTLS
 
 	if err := d.DialAndSend(m); err != nil {
-		return err
+		return fmt.Errorf("Failed to send mail: %v", err)
 	}
 
 	return nil
