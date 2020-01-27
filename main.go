@@ -15,6 +15,8 @@ func main() {
 	var cfg config
 	cfg.getConfig()
 
+	log.SetOutput(os.Stdout)
+
 	s, err := scheduler.NewScheduler(1000)
 	if err != nil {
 		panic(err)
