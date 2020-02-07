@@ -101,7 +101,8 @@ func detectOpenedMR(cfg config) {
 }
 
 func detectMergedMR(cfg config) {
-	var email []string
+	var users []string
+	var emails []string
 	var ownersEmail []string
 	var subj string
 	var msg string
@@ -175,24 +176,24 @@ func detectMergedMR(cfg config) {
 		switch {
 		case state_fail != 0:
 		case vip_f+vip_b != 2, state_down == 1:
-			email = ldapMail(cfg, mr.MergedBy.Username)
+			users = append(users, mr.MergedBy.Username)
+			emails = ldapMail(cfg, users)
 			subj = "Code of Conduct failure incident"
 			msg = fmt.Sprintf("Hello,"+
 				"<p>By merging <a href='%v'>Merge Request #%v</a> without 2 qualified approves"+
 				" or negative review you've failed repository's Code of Conduct.</p>"+
 				"<p>This incident will be reported.</p>", mr.WebURL, mr.IID)
 
-			if err := mailSend(cfg, email, subj, msg); err != nil {
+			if err := mailSend(cfg, emails, subj, msg); err != nil {
 				log.Printf("Failed to send mail: %v", err)
 				break
 			}
 
-			for _, i := range cfg.VBackend {
-				ownersEmail = append(ownersEmail, ldapMail(cfg, i)...)
-			}
-			for _, i := range cfg.VFrontend {
-				ownersEmail = append(ownersEmail, ldapMail(cfg, i)...)
-			}
+			ownersUsers := cfg.VBackend
+			ownersUsers = append(ownersUsers, cfg.VFrontend...)
+
+			ownersEmail = ldapMail(cfg, ownersUsers)
+
 			subj = fmt.Sprintf("MR %v has failed requirements!", mr.IID)
 			msg = fmt.Sprintf(
 				"<p><a href='%v'>Merge Request #%v</a> does not meet requirements but it was merged!</p>",

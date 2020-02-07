@@ -6,10 +6,19 @@ import (
 	"github.com/go-ldap/ldap/v3"
 )
 
-func ldapMail(cfg config, user string) []string {
-	conn, err := ldapConnect(cfg)
-
+func ldapMail(cfg config, users []string) []string {
+	var filter string
 	var mail []string
+
+	if len(users) == 0 {
+		return mail
+	}
+
+	for _, item := range users {
+		filter = fmt.Sprintf("%v(sAMAccountName=%v)", filter, item)
+	}
+
+	conn, err := ldapConnect(cfg)
 
 	if err != nil {
 		fmt.Printf("Failed to connect. %s", err)
@@ -18,7 +27,8 @@ func ldapMail(cfg config, user string) []string {
 
 	defer conn.Close()
 
-	filter := fmt.Sprintf("(sAMAccountName=%v)", user)
+	filter = fmt.Sprintf("(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(|%v))", filter)
+
 	if err, mail = ldapList(conn, cfg.LBase, filter); err != nil {
 		fmt.Printf("%v", err)
 		return mail
