@@ -8,21 +8,28 @@ import (
 
 func ldapMail(cfg config, users []string) []string {
 	var filter string
-	var mail []string
 
 	if len(users) == 0 {
-		return mail
+		return nil
 	}
 
 	for _, item := range users {
 		filter = fmt.Sprintf("%v(sAMAccountName=%v)", filter, item)
 	}
 
+	mail := ldapRequest(cfg, filter)
+
+	return mail
+}
+
+func ldapRequest(cfg config, filter string) []string {
+	var mail []string
+
 	conn, err := ldapConnect(cfg)
 
 	if err != nil {
 		fmt.Printf("Failed to connect. %s", err)
-		return mail
+		return nil
 	}
 
 	defer conn.Close()
@@ -31,7 +38,7 @@ func ldapMail(cfg config, users []string) []string {
 
 	if mail, err = ldapList(conn, cfg.LBase, filter); err != nil {
 		fmt.Printf("%v", err)
-		return mail
+		return nil
 	}
 
 	return mail
