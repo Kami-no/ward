@@ -29,13 +29,12 @@ func ldapMail(cfg config, users []string) []string {
 
 	filter = fmt.Sprintf("(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(|%v))", filter)
 
-	if err, mail = ldapList(conn, cfg.LBase, filter); err != nil {
+	if mail, err = ldapList(conn, cfg.LBase, filter); err != nil {
 		fmt.Printf("%v", err)
 		return mail
 	}
 
 	return mail
-
 }
 
 func ldapConnect(cfg config) (*ldap.Conn, error) {
@@ -52,7 +51,7 @@ func ldapConnect(cfg config) (*ldap.Conn, error) {
 	return conn, nil
 }
 
-func ldapList(conn *ldap.Conn, base string, filter string) (error, []string) {
+func ldapList(conn *ldap.Conn, base string, filter string) ([]string, error) {
 	var mail []string
 
 	result, err := conn.Search(ldap.NewSearchRequest(
@@ -68,12 +67,12 @@ func ldapList(conn *ldap.Conn, base string, filter string) (error, []string) {
 	))
 
 	if err != nil {
-		return fmt.Errorf("Failed to search users. %s", err), mail
+		return mail, fmt.Errorf("Failed to search users. %s", err)
 	}
 
 	for _, entry := range result.Entries {
 		mail = append(mail, entry.GetAttributeValue("mail"))
 	}
 
-	return nil, mail
+	return mail, nil
 }
