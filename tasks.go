@@ -240,11 +240,12 @@ func detectDeadBrunches(cfg config) {
 			if now.Sub(updated).Hours() >= 7*24 {
 				var rcpt []string
 				rcpt = append(rcpt, branch.Commit.AuthorEmail)
-				url := fmt.Sprintf("%v/tree/%v", cfg.GPUrl, branch.Name)
+				url := fmt.Sprintf("%v/-/branches/all?utf8=✓&search=%v", cfg.GPUrl, branch.Name)
 				subj := fmt.Sprint("Dead branch detected!")
 				msg := fmt.Sprintf(
 					"<p>I see dead branches: <a href='%v'>%v</a></p>"+
-						"<p>If you don't need it anymore, you should delete it.</p>", url, branch.Name)
+						"<p>If you don't need it anymore, you should delete it.</p>",
+					url, branch.Name)
 
 				if err := mailSend(cfg, rcpt, subj, msg); err != nil {
 					log.Printf("Failed to send mail: %v", err)
