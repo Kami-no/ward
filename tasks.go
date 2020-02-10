@@ -239,7 +239,13 @@ func detectDeadBrunches(cfg config) {
 			updated := *branch.Commit.AuthoredDate
 			if now.Sub(updated).Hours() >= 7*24 {
 				var rcpt []string
-				rcpt = append(rcpt, branch.Commit.AuthorEmail)
+
+				if ldapCheck(cfg, branch.Commit.AuthorEmail) {
+					rcpt = append(rcpt, branch.Commit.AuthorEmail)
+				} else {
+					rcpt = append(rcpt, cfg.SMail)
+				}
+
 				url := fmt.Sprintf("%v/-/branches/all?utf8=✓&search=%v", cfg.GPUrl, branch.Name)
 				subj := fmt.Sprint("Dead branch detected!")
 				msg := fmt.Sprintf(

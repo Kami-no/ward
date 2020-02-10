@@ -6,6 +6,14 @@ import (
 	"github.com/go-ldap/ldap/v3"
 )
 
+func ldapCheck(cfg config, email string) bool {
+	filter := fmt.Sprintf("mail=%v)", email)
+
+	mail := ldapRequest(cfg, filter)
+
+	return len(mail) >= 0
+}
+
 func ldapMail(cfg config, users []string) []string {
 	var filter string
 
