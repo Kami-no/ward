@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/xanzy/go-gitlab"
@@ -243,7 +244,17 @@ func detectDeadBrunches(cfg config) {
 				if ldapCheck(cfg, branch.Commit.AuthorEmail) {
 					rcpt = append(rcpt, branch.Commit.AuthorEmail)
 				} else {
-					rcpt = append(rcpt, cfg.SMail)
+					var rcptUsers []string
+
+					rcptUser := strings.Split(branch.Commit.AuthorEmail, "@")
+					rcptUsers = append(rcptUsers, rcptUser[0])
+					rcptEmails := ldapMail(cfg, rcptUsers)
+
+					if len(rcptEmails) > 0 {
+						rcpt = append(rcpt, rcptEmails[0])
+					} else {
+						rcpt = append(rcpt, cfg.SMail)
+					}
 				}
 
 				url := fmt.Sprintf("%v/-/branches/all?utf8=✓&search=%v", cfg.GPUrl, branch.Name)
