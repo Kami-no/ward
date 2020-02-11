@@ -10,10 +10,9 @@ import (
 )
 
 func detectOpenedMR(cfg config) {
-	git := gitlab.NewClient(nil, cfg.GToken)
-	if err := git.SetBaseURL(cfg.GURL); err != nil {
-		log.Printf("Failed to setup GitLab: %v", err)
-		return
+	git, err := gitlab.NewBasicAuthClient(nil, cfg.GURL, cfg.GUser, cfg.LPass)
+	if err != nil {
+		fmt.Printf("Failed to connect to GitLab: %v", err)
 	}
 
 	mrs_opts := &gitlab.ListProjectMergeRequestsOptions{
@@ -108,10 +107,9 @@ func detectMergedMR(cfg config) {
 	var subj string
 	var msg string
 
-	git := gitlab.NewClient(nil, cfg.GToken)
-	if err := git.SetBaseURL(cfg.GURL); err != nil {
-		log.Printf("Failed to setup GitLab: %v", err)
-		return
+	git, err := gitlab.NewBasicAuthClient(nil, cfg.GURL, cfg.GUser, cfg.LPass)
+	if err != nil {
+		fmt.Printf("Failed to connect to GitLab: %v", err)
 	}
 
 	mrs_opts := &gitlab.ListProjectMergeRequestsOptions{
@@ -216,10 +214,9 @@ func detectMergedMR(cfg config) {
 func detectDeadBrunches(cfg config) {
 	now := time.Now()
 
-	git := gitlab.NewClient(nil, cfg.GToken)
-	if err := git.SetBaseURL(cfg.GURL); err != nil {
-		log.Printf("Failed to setup GitLab: %v", err)
-		return
+	git, err := gitlab.NewBasicAuthClient(nil, cfg.GURL, cfg.GUser, cfg.LPass)
+	if err != nil {
+		fmt.Printf("Failed to connect to GitLab: %v", err)
 	}
 
 	branches_opts := &gitlab.ListBranchesOptions{

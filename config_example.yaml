@@ -1,8 +1,7 @@
 ---
 GProject: 123
 GPUrl: https://git.example.com/my-group/my-repo
-GToken: string
-GURL: https://git.example.com/api/v4/
+GURL: https://git.example.com
 GUser: user
 LBase: DC=ad,DC=example,DC=com
 LHost: ad.example.com:389

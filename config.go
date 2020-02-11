@@ -10,7 +10,6 @@ import (
 type config struct {
 	GProject  int      `yaml:"GProject"`
 	GPUrl     string   `yaml:"GPUrl"`
-	GToken    string   `yaml:"GToken"`
 	GURL      string   `yaml:"GURL"`
 	GUser     string   `yaml:"GUser"`
 	LBase     string   `yaml:"LBase"`
