@@ -7,7 +7,7 @@ import (
 )
 
 func ldapCheck(cfg config, email string) bool {
-	filter := fmt.Sprintf("mail=%v)", email)
+	filter := fmt.Sprintf("(mail=%v)", email)
 
 	mail := ldapRequest(cfg, filter)
 
