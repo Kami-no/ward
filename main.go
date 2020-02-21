@@ -26,6 +26,10 @@ func main() {
 	s.Every().Second(0).Minute(0).Hour(1).Weekday(6).Do(detectDeadBrunches, cfg)
 
 	http.HandleFunc("/", handler)
+	http.HandleFunc("/mr", handleMR)
+	http.HandleFunc("/mr/opened", handleMROpened)
+	http.HandleFunc("/mr/merged", handleMRMerged)
+	http.HandleFunc("/mr/apply", handleMRApply)
 
 	server := &http.Server{
 		Addr:         ":8081",

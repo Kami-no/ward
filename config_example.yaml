@@ -23,3 +23,32 @@ VBackend:
 VFrontend:
   - user1
   - user2
+
+Credentials:
+  User: user
+  Password: qwerty
+Endpoints:
+  DC:
+    Host: ad.example.com
+    Port: 389
+    Domain: ad.example.com
+    Base: DC=ad,DC=example,DC=com
+  SMTP:
+    Host: smtp.example.com
+    Port: 587
+  GitLab: https://git.example.com
+Awards:
+  Like: thumbsup
+  Dislike: thumbsdown
+  Ready: heavy_check_mark
+  NotReady: x
+  NonCompliant: poop
+Projects:
+  - ID: 123
+    Teams:
+      Backend:
+        - user1
+        - user2
+      Frontend:
+        - user1
+        - user2
