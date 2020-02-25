@@ -11,7 +11,7 @@ func ldapCheck(cfg config, email string) bool {
 
 	mail := ldapRequest(cfg, filter)
 
-	return len(mail) >= 0
+	return len(mail) > 0
 }
 
 func ldapMail(cfg config, users []string) []string {
