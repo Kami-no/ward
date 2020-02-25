@@ -51,24 +51,7 @@ func handleMRMerged(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMRApply(w http.ResponseWriter, r *http.Request) {
-	var cfg config
-	cfg.getConfig()
-
-	mrsOpened, err := checkPrjRequests(cfg, cfg.Projects, "opened")
-	if err != nil {
-		log.Println(err)
-	}
-	actionsOpened := evalOpenedRequests(mrsOpened)
-
-	mrsMerged, err := checkPrjRequests(cfg, cfg.Projects, "merged")
-	if err != nil {
-		log.Println(err)
-	}
-	actionsMerged := evalMergedRequests(mrsMerged)
-
-	actions := append(actionsOpened, actionsMerged...)
-
-	processMR(cfg, actions)
+	actions := detectMR()
 
 	output := fmt.Sprintf("%v", actions)
 	fmt.Fprint(w, output)
