@@ -51,7 +51,10 @@ func handleMRMerged(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMRApply(w http.ResponseWriter, r *http.Request) {
-	actions := detectMR()
+	var cfg config
+	cfg.getConfig()
+
+	actions := detectMR(cfg)
 
 	output := fmt.Sprintf("%v", actions)
 	fmt.Fprint(w, output)

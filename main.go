@@ -21,7 +21,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	s.Every().Second(15).Do(detectMR)
+	s.Every().Second(15).Do(detectMR, cfg)
 	s.Every().Second(0).Minute(0).Hour(1).Weekday(6).Do(detectDeadBrunches, cfg)
 
 	http.HandleFunc("/", handler)

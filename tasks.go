@@ -74,10 +74,7 @@ func detectDeadBrunches(cfg config) {
 	}
 }
 
-func detectMR() []mrAction {
-	var cfg config
-	cfg.getConfig()
-
+func detectMR(cfg config) []mrAction {
 	mrsOpened, err := checkPrjRequests(cfg, cfg.Projects, "opened")
 	if err != nil {
 		log.Println(err)
