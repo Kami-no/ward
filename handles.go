@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -45,8 +46,10 @@ func handleMRMerged(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	actions := evalMergedRequests(mrs)
-	output := fmt.Sprintf("%v", actions)
+	data := evalMergedRequests(mrs)
+
+	out, _ := json.Marshal(data)
+	output := fmt.Sprintf("%v", string(out))
 	fmt.Fprint(w, output)
 }
 
