@@ -27,13 +27,37 @@ type MergeRequest struct {
 }
 
 type mrAction struct {
-	pid      int
-	mid      int
-	aid      int
-	award    string
-	mergedBy string
-	path     string
-	state    bool
+	Pid      int
+	Mid      int
+	Aid      int
+	Award    string
+	MergedBy string
+	Path     string
+	State    bool
+}
+
+type deadBranch struct {
+	Author string
+	Age    int
+}
+
+type deadProject struct {
+	Name     string
+	URL      string
+	Owners   []string
+	Branches map[string]deadBranch
+}
+
+type deadAuthor struct {
+	Mail     string
+	Name     string
+	Branches map[int][]string
+	Projects map[int]deadProject
+}
+
+type deadResults struct {
+	Projects map[int]deadProject
+	Authors  map[string]deadAuthor
 }
 
 func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrProject, error) {
@@ -177,50 +201,50 @@ func evalOpenedRequests(MRProjects map[int]MrProject) []mrAction {
 			if mr.Awards.Like && !mr.Awards.Dislike {
 				if mr.Awards.NotReady != 0 {
 					action := mrAction{
-						pid:   pid,
-						mid:   mid,
-						aid:   mr.Awards.NotReady,
-						award: "notready",
-						state: false}
+						Pid:   pid,
+						Mid:   mid,
+						Aid:   mr.Awards.NotReady,
+						Award: "notready",
+						State: false}
 					actions = append(actions, action)
 				}
 				if mr.Awards.Ready == 0 {
 					action := mrAction{
-						pid:   pid,
-						mid:   mid,
-						aid:   mr.Awards.Ready,
-						award: "ready",
-						state: true}
+						Pid:   pid,
+						Mid:   mid,
+						Aid:   mr.Awards.Ready,
+						Award: "ready",
+						State: true}
 					actions = append(actions, action)
 				}
 			} else {
 				if mr.Awards.Ready != 0 {
 					action := mrAction{
-						pid:   pid,
-						mid:   mid,
-						aid:   mr.Awards.Ready,
-						award: "ready",
-						state: false}
+						Pid:   pid,
+						Mid:   mid,
+						Aid:   mr.Awards.Ready,
+						Award: "ready",
+						State: false}
 					actions = append(actions, action)
 				}
 				if mr.Awards.NotReady == 0 {
 					action := mrAction{
-						pid:   pid,
-						mid:   mid,
-						aid:   mr.Awards.NotReady,
-						award: "notready",
-						state: true}
+						Pid:   pid,
+						Mid:   mid,
+						Aid:   mr.Awards.NotReady,
+						Award: "notready",
+						State: true}
 					actions = append(actions, action)
 				}
 			}
 
 			if mr.Awards.NonCompliant != 0 {
 				action := mrAction{
-					pid:   pid,
-					mid:   mid,
-					aid:   mr.Awards.NonCompliant,
-					award: "nc",
-					state: false}
+					Pid:   pid,
+					Mid:   mid,
+					Aid:   mr.Awards.NonCompliant,
+					Award: "nc",
+					State: false}
 				actions = append(actions, action)
 			}
 		}
@@ -234,47 +258,47 @@ func evalMergedRequests(MRProjects map[int]MrProject) []mrAction {
 
 	for pid, project := range MRProjects {
 		for mid, mr := range project.MR {
-			if mr.Awards.Dislike {
+			if mr.Awards.Dislike || !mr.Awards.Like {
 				if mr.Awards.NonCompliant == 0 {
 					action := mrAction{
-						pid:      pid,
-						mid:      mid,
-						aid:      mr.Awards.NonCompliant,
-						award:    "nc",
-						mergedBy: mr.MergedBy,
-						path:     mr.Path,
-						state:    true}
+						Pid:      pid,
+						Mid:      mid,
+						Aid:      mr.Awards.NonCompliant,
+						Award:    "nc",
+						MergedBy: mr.MergedBy,
+						Path:     mr.Path,
+						State:    true}
 					actions = append(actions, action)
 				}
-			} else if mr.Awards.Like {
+			} else {
 				if mr.Awards.NonCompliant != 0 {
 					action := mrAction{
-						pid:   pid,
-						mid:   mid,
-						aid:   mr.Awards.NonCompliant,
-						award: "nc",
-						state: false}
+						Pid:   pid,
+						Mid:   mid,
+						Aid:   mr.Awards.NonCompliant,
+						Award: "nc",
+						State: false}
 					actions = append(actions, action)
 				}
 			}
 
 			if mr.Awards.NotReady != 0 {
 				action := mrAction{
-					pid:   pid,
-					mid:   mid,
-					aid:   mr.Awards.NotReady,
-					award: "notready",
-					state: false}
+					Pid:   pid,
+					Mid:   mid,
+					Aid:   mr.Awards.NotReady,
+					Award: "notready",
+					State: false}
 				actions = append(actions, action)
 			}
 
 			if mr.Awards.Ready != 0 {
 				action := mrAction{
-					pid:   pid,
-					mid:   mid,
-					aid:   mr.Awards.Ready,
-					award: "ready",
-					state: false}
+					Pid:   pid,
+					Mid:   mid,
+					Aid:   mr.Awards.Ready,
+					Award: "ready",
+					State: false}
 				actions = append(actions, action)
 			}
 		}
@@ -296,12 +320,12 @@ func processMR(cfg config, actions []mrAction) {
 	}
 
 	for _, action := range actions {
-		if action.state {
-			award_opts := &gitlab.CreateAwardEmojiOptions{Name: award[action.award]}
-			_, _, _ = git.AwardEmoji.CreateMergeRequestAwardEmoji(action.pid, action.mid, award_opts)
+		if action.State {
+			award_opts := &gitlab.CreateAwardEmojiOptions{Name: award[action.Award]}
+			_, _, _ = git.AwardEmoji.CreateMergeRequestAwardEmoji(action.Pid, action.Mid, award_opts)
 
 			// Notify about non-compiant merge
-			if action.award == "nc" {
+			if action.Award == "nc" {
 				var users []string
 				var emails []string
 				var subj string
@@ -309,13 +333,13 @@ func processMR(cfg config, actions []mrAction) {
 				var ownersEmail []string
 				var ownersUsers []string
 
-				users = append(users, action.mergedBy)
+				users = append(users, action.MergedBy)
 				emails = ldapMail(cfg, users)
 				subj = "Code of Conduct failure incident"
 				msg = fmt.Sprintf("Hello,"+
 					"<p>By merging <a href='%v'>Merge Request #%v</a> without 2 qualified approves"+
 					" or negative review you've failed repository's Code of Conduct.</p>"+
-					"<p>This incident will be reported.</p>", action.path, action.mid)
+					"<p>This incident will be reported.</p>", action.Path, action.Mid)
 
 				if err := mailSend(cfg, emails, subj, msg); err != nil {
 					log.Printf("Failed to send mail: %v", err)
@@ -326,20 +350,20 @@ func processMR(cfg config, actions []mrAction) {
 
 				ownersEmail = ldapMail(cfg, ownersUsers)
 
-				subj = fmt.Sprintf("MR %v has failed requirements!", action.mid)
+				subj = fmt.Sprintf("MR %v has failed requirements!", action.Mid)
 				msg = fmt.Sprintf(
 					"<p><a href='%v'>Merge Request #%v</a> does not meet requirements but it was merged!</p>",
-					action.path, action.mid)
+					action.Path, action.Mid)
 
 				if err := mailSend(cfg, ownersEmail, subj, msg); err != nil {
 					log.Printf("Failed to send mail: %v", err)
 					break
 				}
 
-				log.Printf("MR %v is merged and has failed CC !!!", action.mid)
+				log.Printf("MR %v is merged and has failed CC !!!", action.Mid)
 			}
 		} else {
-			_, _ = git.AwardEmoji.DeleteMergeRequestAwardEmoji(action.pid, action.mid, action.aid)
+			_, _ = git.AwardEmoji.DeleteMergeRequestAwardEmoji(action.Pid, action.Mid, action.Aid)
 		}
 	}
 }
