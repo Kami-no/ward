@@ -333,6 +333,8 @@ func processMR(cfg config, actions []mrAction) {
 				var ownersEmail []string
 				var ownersUsers []string
 
+				log.Printf("Non-compliant MR detected: %v@%v", action.Mid, action.Pid)
+
 				users = append(users, action.MergedBy)
 				emails = ldapMail(cfg, users)
 				subj = "Code of Conduct failure incident"
