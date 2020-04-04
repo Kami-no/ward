@@ -50,6 +50,8 @@ func handleMRMerged(w http.ResponseWriter, r *http.Request) {
 
 	out, _ := json.Marshal(data)
 	output := fmt.Sprintf("%v", string(out))
+
+	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, output)
 }
 

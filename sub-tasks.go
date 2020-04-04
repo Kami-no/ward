@@ -49,7 +49,6 @@ type deadProject struct {
 }
 
 type deadAuthor struct {
-	Mail     string
 	Name     string
 	Branches map[int][]string
 	Projects map[int]deadProject
