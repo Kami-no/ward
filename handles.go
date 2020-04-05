@@ -19,7 +19,11 @@ func handleMR(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
-	output := fmt.Sprintf("%v", mrs)
+
+	out, _ := json.Marshal(mrs)
+	output := fmt.Sprintf("%v", string(out))
+
+	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, output)
 }
 

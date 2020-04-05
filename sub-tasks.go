@@ -162,7 +162,6 @@ func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrP
 					case cfg.Awards.NonCompliant:
 						MRequest.Awards.NonCompliant = award.ID
 						MRequest.MergedBy = mr.MergedBy.Username
-						MRequest.Path = mr.WebURL
 					}
 				}
 			}
@@ -183,6 +182,8 @@ func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrP
 				}
 			}
 			MRequest.Awards.Like = mrLike
+
+			MRequest.Path = mr.WebURL
 
 			if mr.MergedBy != nil {
 				MRequest.MergedBy = mr.MergedBy.Username
@@ -355,8 +356,12 @@ func processMR(cfg config, actions []mrAction) {
 					log.Printf("Failed to send mail to recipient: %v", err)
 				}
 
-				for _, teams := range cfg.Projects[action.Pid].Teams {
-					ownersUsers = append(ownersUsers, teams...)
+				for _, prj := range cfg.Projects {
+					if prj.ID == action.Pid {
+						for _, team := range prj.Teams {
+							ownersUsers = append(ownersUsers, team...)
+						}
+					}
 				}
 
 				ownersEmail = ldapMail(cfg, ownersUsers)
