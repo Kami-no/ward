@@ -59,9 +59,12 @@ func handleMRApply(w http.ResponseWriter, r *http.Request) {
 	var cfg config
 	cfg.getConfig()
 
-	actions := detectMR(cfg)
+	data := detectMR(cfg)
 
-	output := fmt.Sprintf("%v", actions)
+	out, _ := json.Marshal(data)
+	output := fmt.Sprintf("%v", string(out))
+
+	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, output)
 }
 

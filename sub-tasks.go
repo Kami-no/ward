@@ -184,6 +184,10 @@ func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrP
 			}
 			MRequest.Awards.Like = mrLike
 
+			if mr.MergedBy != nil {
+				MRequest.MergedBy = mr.MergedBy.Username
+			}
+
 			if MrPrj.MR == nil {
 				MrPrj.MR = make(map[int]MergeRequest)
 			}
@@ -232,11 +236,12 @@ func evalOpenedRequests(MRProjects map[int]MrProject) []mrAction {
 				}
 				if mr.Awards.NotReady == 0 {
 					action := mrAction{
-						Pid:   pid,
-						Mid:   mid,
-						Aid:   mr.Awards.NotReady,
-						Award: "notready",
-						State: true}
+						Pid:      pid,
+						Mid:      mid,
+						Aid:      mr.Awards.NotReady,
+						Award:    "notready",
+						MergedBy: mr.MergedBy,
+						State:    true}
 					actions = append(actions, action)
 				}
 			}
@@ -347,11 +352,12 @@ func processMR(cfg config, actions []mrAction) {
 					"<p>This incident will be reported.</p>", action.Path, action.Mid)
 
 				if err := mailSend(cfg, emails, subj, msg); err != nil {
-					log.Printf("Failed to send mail: %v", err)
-					break
+					log.Printf("Failed to send mail to recipient: %v", err)
 				}
 
-				ownersUsers = append(cfg.VBackend, cfg.VFrontend...)
+				for _, teams := range cfg.Projects[action.Pid].Teams {
+					ownersUsers = append(ownersUsers, teams...)
+				}
 
 				ownersEmail = ldapMail(cfg, ownersUsers)
 
@@ -361,11 +367,8 @@ func processMR(cfg config, actions []mrAction) {
 					action.Path, action.Mid)
 
 				if err := mailSend(cfg, ownersEmail, subj, msg); err != nil {
-					log.Printf("Failed to send mail: %v", err)
-					break
+					log.Printf("Failed to send mail to owners: %v", err)
 				}
-
-				log.Printf("MR %v is merged and has failed CC !!!", action.Mid)
 			}
 		} else {
 			_, _ = git.AwardEmoji.DeleteMergeRequestAwardEmoji(action.Pid, action.Mid, action.Aid)
