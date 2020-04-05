@@ -64,3 +64,33 @@ func handleMRApply(w http.ResponseWriter, r *http.Request) {
 	output := fmt.Sprintf("%v", actions)
 	fmt.Fprint(w, output)
 }
+
+func handleDead(w http.ResponseWriter, r *http.Request) {
+	var cfg config
+	cfg.getConfig()
+
+	data := detectDead(cfg)
+	undead, _ := json.Marshal(data)
+
+	output := fmt.Sprintf("%v", string(undead))
+
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprint(w, output)
+}
+
+func handleDeadLetter(w http.ResponseWriter, r *http.Request) {
+	var cfg config
+	cfg.getConfig()
+
+	undead := detectDead(cfg)
+	for _, v := range undead.Authors {
+		v.Projects = undead.Projects
+		template, err := deadAuthorTemplate(v)
+		if err != nil {
+			fmt.Fprint(w, err)
+			return
+		}
+		fmt.Fprint(w, template)
+		break
+	}
+}

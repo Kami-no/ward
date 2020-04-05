@@ -1,76 +1,23 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"strings"
-	"time"
-
-	"github.com/xanzy/go-gitlab"
 )
 
 func detectDeadBrunches(cfg config) {
-	now := time.Now()
-
-	git, err := gitlab.NewBasicAuthClient(nil, cfg.GURL, cfg.GUser, cfg.LPass)
-	if err != nil {
-		fmt.Printf("Failed to connect to GitLab: %v", err)
-	}
-
-	branches_opts := &gitlab.ListBranchesOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: 10,
-			Page:    1,
-		},
-	}
-
-	for {
-		branches, response, err := git.Branches.ListBranches(cfg.GProject, branches_opts)
+	undead := detectDead(cfg)
+	for rcpt, v := range undead.Authors {
+		v.Projects = undead.Projects
+		msg, err := deadAuthorTemplate(v)
 		if err != nil {
-			log.Printf("Failed to list branches: %v", err)
-			break
+			log.Printf("Templating error: %v", err)
+			return
 		}
 
-		for _, branch := range branches {
-			updated := *branch.Commit.AuthoredDate
-			if now.Sub(updated).Hours() >= 7*24 {
-				var rcpt []string
-
-				if ldapCheck(cfg, branch.Commit.AuthorEmail) {
-					rcpt = append(rcpt, branch.Commit.AuthorEmail)
-				} else {
-					var rcptUsers []string
-
-					rcptUser := strings.Split(branch.Commit.AuthorEmail, "@")
-					rcptUsers = append(rcptUsers, rcptUser[0])
-					rcptEmails := ldapMail(cfg, rcptUsers)
-
-					if len(rcptEmails) > 0 {
-						rcpt = append(rcpt, rcptEmails[0])
-					} else {
-						rcpt = append(rcpt, cfg.SMail)
-					}
-				}
-
-				url := fmt.Sprintf("%v/-/branches/all?utf8=✓&search=%v", cfg.GPUrl, branch.Name)
-				subj := fmt.Sprint("Dead branch detected!")
-				msg := fmt.Sprintf(
-					"<p>I see dead branches: <a href='%v'>%v</a></p>"+
-						"<p>If you don't need it anymore, you should delete it.</p>",
-					url, branch.Name)
-
-				if err := mailSend(cfg, rcpt, subj, msg); err != nil {
-					log.Printf("Failed to send mail: %v", err)
-					break
-				}
-				log.Printf("Branch is too old: %v %v %v", branch.Name, branch.Commit.AuthorEmail, updated)
-			}
+		subj := "Dead branch notification"
+		if err := mailSend(cfg, []string{rcpt}, subj, msg); err != nil {
+			log.Printf("Failed to send mail: %v", err)
 		}
-
-		if response.CurrentPage >= response.TotalPages {
-			break
-		}
-		branches_opts.Page = response.NextPage
 	}
 }
 

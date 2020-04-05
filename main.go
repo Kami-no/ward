@@ -22,18 +22,20 @@ func main() {
 		panic(err)
 	}
 	s.Every().Second(15).Do(detectMR, cfg)
-	s.Every().Second(0).Minute(0).Hour(1).Weekday(6).Do(detectDeadBrunches, cfg)
+	s.Every().Second(0).Minute(0).Hour(2).Weekday(1).Do(detectDeadBrunches, cfg)
 
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/mr", handleMR)
 	http.HandleFunc("/mr/opened", handleMROpened)
 	http.HandleFunc("/mr/merged", handleMRMerged)
 	http.HandleFunc("/mr/apply", handleMRApply)
+	http.HandleFunc("/dead", handleDead)
+	http.HandleFunc("/dead/letter", handleDeadLetter)
 
 	server := &http.Server{
 		Addr:         ":8081",
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 	go func() {

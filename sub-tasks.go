@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"log"
+	"strings"
+	"time"
 
 	"github.com/xanzy/go-gitlab"
 )
@@ -367,4 +371,137 @@ func processMR(cfg config, actions []mrAction) {
 			_, _ = git.AwardEmoji.DeleteMergeRequestAwardEmoji(action.Pid, action.Mid, action.Aid)
 		}
 	}
+}
+
+func detectDead(cfg config) deadResults {
+	var undead deadResults
+	undead.Authors = make(map[string]deadAuthor)
+	undead.Projects = make(map[int]deadProject)
+	trueMail := make(map[string]string)
+
+	projects := cfg.Projects
+
+	now := time.Now()
+
+	git, err := gitlab.NewBasicAuthClient(nil, cfg.GURL, cfg.GUser, cfg.LPass)
+	if err != nil {
+		fmt.Printf("Failed to connect to GitLab: %v", err)
+	}
+
+	branches_opts := &gitlab.ListBranchesOptions{
+		ListOptions: gitlab.ListOptions{
+			PerPage: 10,
+			Page:    1,
+		},
+	}
+
+	for _, project := range projects {
+		// Process all branches for the project not just latest
+		for {
+			branches, response, err := git.Branches.ListBranches(project.ID, branches_opts)
+			if err != nil {
+				log.Printf("Failed to list branches: %v", err)
+				break
+			}
+
+			for _, branch := range branches {
+				var name string
+				var mail string
+
+				updated := *branch.Commit.AuthoredDate
+				if now.Sub(updated).Hours() >= 7*24 {
+					if _, found := trueMail[branch.Commit.AuthorEmail]; !found {
+						// Validate true mail
+						if ldapCheck(cfg, branch.Commit.AuthorEmail) {
+							name = branch.Commit.AuthorName
+							mail = branch.Commit.AuthorEmail
+						} else {
+							var rcptUsers []string
+
+							rcptUser := strings.Split(branch.Commit.AuthorEmail, "@")
+							rcptUsers = append(rcptUsers, rcptUser[0])
+							rcptEmails := ldapMail(cfg, rcptUsers)
+
+							if len(rcptEmails) > 0 {
+								name = branch.Commit.AuthorName
+								mail = rcptEmails[0]
+							} else {
+								rcptEmails := ldapMail(cfg, []string{branch.Commit.AuthorName})
+								if len(rcptEmails) > 0 {
+									name = branch.Commit.AuthorName
+									mail = rcptEmails[0]
+								} else {
+									name = "Unidentified"
+									mail = "unknown@huawei.com"
+									log.Printf("Unidentified author: %v - %v",
+										branch.Commit.AuthorName, branch.Commit.AuthorEmail)
+								}
+
+							}
+						}
+
+						trueMail[branch.Commit.AuthorEmail] = mail
+
+						if _, found := undead.Authors[mail]; !found {
+							undead.Authors[mail] = deadAuthor{
+								Name:     name,
+								Branches: make(map[int][]string),
+							}
+						}
+					} else {
+						mail = trueMail[branch.Commit.AuthorEmail]
+					}
+					undead.Authors[mail].Branches[project.ID] = append(undead.Authors[mail].Branches[project.ID], branch.Name)
+
+					// Fill in data for a the project
+					if _, found := undead.Projects[project.ID]; !found {
+						var prj_name string
+						var prj_url string
+
+						prj_opts := &gitlab.GetProjectOptions{}
+						prj, _, err := git.Projects.GetProject(project.ID, prj_opts)
+						if err != nil {
+							prj_name = fmt.Sprintf("%v", project.ID)
+							prj_url = cfg.Endpoints.GitLab
+							log.Printf("Failed to get project info: %v", err)
+						} else {
+							prj_name = prj.NameWithNamespace
+							prj_url = prj.WebURL
+						}
+
+						undead.Projects[project.ID] = deadProject{
+							Branches: make(map[string]deadBranch),
+							Owners:   append(cfg.VBackend, cfg.VFrontend...),
+							URL:      prj_url,
+							Name:     prj_name,
+						}
+					}
+					undead.Projects[project.ID].Branches[branch.Name] = deadBranch{
+						Age:    int(now.Sub(updated).Hours()) / 24,
+						Author: branch.Commit.AuthorName,
+					}
+				}
+			}
+
+			if response.CurrentPage >= response.TotalPages {
+				break
+			}
+			branches_opts.Page = response.NextPage
+		}
+	}
+	return undead
+}
+
+func deadAuthorTemplate(dAuthor deadAuthor) (string, error) {
+	var buffer bytes.Buffer
+	var output string
+
+	tmpl := template.Must(template.ParseFiles("templates/dead-branches-author.gohtml"))
+	err := tmpl.Execute(&buffer, dAuthor)
+	if err != nil {
+		return output, err
+	}
+	output = buffer.String()
+
+	return output, nil
 }

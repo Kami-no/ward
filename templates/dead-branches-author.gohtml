@@ -1,0 +1,15 @@
+<p>Your dead branches with updates more than 7 days ago were detected in the following projects:
+<ul>
+{{ range $pid, $branches := .Branches -}}
+<li><a href="{{ with (index $.Projects $pid) }}{{ .URL }}{{ end }}">{{ with (index $.Projects $pid) }}{{ .Name }}{{ end }}</a>
+<ul>
+{{ range $branch := $branches -}}
+<li><a href="{{ with (index $.Projects $pid) }}{{ .URL }}{{ end }}/-/branches/all?utf8=✓&search={{ $branch }}">{{ $branch }}</a>;</li>
+{{ end -}}
+</ul>
+</li>
+{{ end -}}
+</ul>
+</p>
+<p>If you don't need it anymore, you should delete it.</p>
+<p>Branches with last modification older than 30 days might be deleted spontaneously.</p>
