@@ -7,6 +7,9 @@ import (
 func detectDeadBrunches(cfg config) {
 	undead := detectDead(cfg)
 	for rcpt, v := range undead.Authors {
+		if rcpt == "unidentified@any.local" {
+			continue
+		}
 		v.Projects = undead.Projects
 		msg, err := deadAuthorTemplate(v)
 		if err != nil {

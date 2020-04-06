@@ -440,7 +440,7 @@ func detectDead(cfg config) deadResults {
 									mail = rcptEmails[0]
 								} else {
 									name = "Unidentified"
-									mail = "unknown@huawei.com"
+									mail = "unidentified@any.local"
 									log.Printf("Unidentified author: %v - %v",
 										branch.Commit.AuthorName, branch.Commit.AuthorEmail)
 								}
