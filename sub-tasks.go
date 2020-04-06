@@ -67,8 +67,9 @@ func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrP
 	var mrs_opts *gitlab.ListProjectMergeRequestsOptions
 	MrProjects := make(map[int]MrProject)
 
+	git_opts := gitlab.WithBaseURL(cfg.Endpoints.GitLab)
 	git, err := gitlab.NewBasicAuthClient(
-		nil, cfg.Endpoints.GitLab, cfg.Credentials.User, cfg.Credentials.Password)
+		cfg.Credentials.User, cfg.Credentials.Password, git_opts)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to connect to GitLab: %v", err)
 	}
@@ -323,7 +324,9 @@ func processMR(cfg config, actions []mrAction) {
 		"nc":       cfg.Awards.NonCompliant,
 	}
 
-	git, err := gitlab.NewBasicAuthClient(nil, cfg.GURL, cfg.GUser, cfg.LPass)
+	git_opts := gitlab.WithBaseURL(cfg.Endpoints.GitLab)
+	git, err := gitlab.NewBasicAuthClient(
+		cfg.Credentials.User, cfg.Credentials.Password, git_opts)
 	if err != nil {
 		fmt.Printf("Failed to connect to GitLab: %v", err)
 	}
@@ -391,7 +394,9 @@ func detectDead(cfg config) deadResults {
 
 	now := time.Now()
 
-	git, err := gitlab.NewBasicAuthClient(nil, cfg.GURL, cfg.GUser, cfg.LPass)
+	git_opts := gitlab.WithBaseURL(cfg.Endpoints.GitLab)
+	git, err := gitlab.NewBasicAuthClient(
+		cfg.Credentials.User, cfg.Credentials.Password, git_opts)
 	if err != nil {
 		fmt.Printf("Failed to connect to GitLab: %v", err)
 	}
