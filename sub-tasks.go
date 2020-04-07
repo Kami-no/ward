@@ -338,6 +338,8 @@ func processMR(cfg config, actions []mrAction) {
 
 			// Notify about non-compiant merge
 			if action.Award == "nc" {
+				var prj_name string
+				var prj_url string
 				var users []string
 				var emails []string
 				var subj string
@@ -345,15 +347,29 @@ func processMR(cfg config, actions []mrAction) {
 				var ownersEmail []string
 				var ownersUsers []string
 
+				prj_opts := &gitlab.GetProjectOptions{}
+				prj, _, err := git.Projects.GetProject(action.Pid, prj_opts)
+				if err != nil {
+					prj_name = fmt.Sprintf("%v", action.Pid)
+					prj_url = cfg.Endpoints.GitLab
+					log.Printf("Failed to get project info: %v", err)
+				} else {
+					prj_name = prj.NameWithNamespace
+					prj_url = prj.WebURL
+				}
+
 				log.Printf("Non-compliant MR detected: %v@%v", action.Mid, action.Pid)
 
 				users = append(users, action.MergedBy)
 				emails = ldapMail(cfg, users)
 				subj = "Code of Conduct failure incident"
-				msg = fmt.Sprintf("Hello,"+
-					"<p>By merging <a href='%v'>Merge Request #%v</a> without 2 qualified approves"+
-					" or negative review you've failed repository's Code of Conduct.</p>"+
-					"<p>This incident will be reported.</p>", action.Path, action.Mid)
+				msg = fmt.Sprintf(
+					"Hello,"+
+						"<p>By merging <a href='%v'>Merge Request #%v</a> in project "+
+						"<a href='%v'>%v</a> without 2 qualified approves "+
+						"or negative review you've failed repository's Code of Conduct.</p>"+
+						"<p>This incident will be reported.</p>",
+					action.Path, action.Mid, prj_url, prj_name)
 
 				if err := mailSend(cfg, emails, subj, msg); err != nil {
 					log.Printf("Failed to send mail to recipient: %v", err)
@@ -371,8 +387,9 @@ func processMR(cfg config, actions []mrAction) {
 
 				subj = fmt.Sprintf("MR %v has failed requirements!", action.Mid)
 				msg = fmt.Sprintf(
-					"<p><a href='%v'>Merge Request #%v</a> does not meet requirements but it was merged!</p>",
-					action.Path, action.Mid)
+					"<p><a href='%v'>Merge Request #%v</a> in project <a href='%v'>%v</a> "+
+						"does not meet requirements but it was merged!</p>",
+					action.Path, action.Mid, prj_url, prj_name)
 
 				if err := mailSend(cfg, ownersEmail, subj, msg); err != nil {
 					log.Printf("Failed to send mail to owners: %v", err)
