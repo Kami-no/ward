@@ -438,6 +438,11 @@ func detectDead(cfg config) deadResults {
 				var name string
 				var mail string
 
+				// Ignore protected branches
+				if branch.Protected {
+					continue
+				}
+
 				updated := *branch.Commit.AuthoredDate
 				if now.Sub(updated).Hours() >= 7*24 {
 					if _, found := trueMail[branch.Commit.AuthorEmail]; !found {
