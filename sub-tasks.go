@@ -143,7 +143,7 @@ func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrP
 					case cfg.Awards.Like:
 						for team, members := range project.Teams {
 							if likes[team] < consensus {
-								if contains(members, award.User.Username) {
+								if contains(members, strings.ToLower(award.User.Username)) {
 									likes[team]++
 								}
 							}
@@ -154,7 +154,7 @@ func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrP
 				}
 
 				// Check service awards
-				if award.User.Username == cfg.Credentials.User {
+				if strings.ToLower(award.User.Username) == cfg.Credentials.User {
 					switch award.Name {
 					case cfg.Awards.Ready:
 						MRequest.Awards.Ready = award.ID
