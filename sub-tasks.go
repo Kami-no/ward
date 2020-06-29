@@ -118,6 +118,19 @@ func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrP
 			consensus = 1
 		}
 
+		// Get the list of protected branches
+		pbs_opts := &gitlab.ListProtectedBranchesOptions{}
+		pbs, _, err := git.ProtectedBranches.ListProtectedBranches(project.ID, pbs_opts)
+		if err != nil {
+			log.Printf("Failed to get list of protected branches for %v: %v", project.ID, err)
+			continue
+		}
+		var protected_branches []string
+		for _, pb := range pbs {
+			protected_branches = append(protected_branches, pb.Name)
+		}
+
+		// Get Merge Requests for project
 		mrs, _, err := git.MergeRequests.ListProjectMergeRequests(project.ID, mrs_opts)
 		if err != nil {
 			log.Printf("Failed to list Merge Requests for %v: %v", project.ID, err)
@@ -126,6 +139,11 @@ func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrP
 
 		// Process Merge Requests
 		for _, mr := range mrs {
+			// Ignore MR if target branch is not protected
+			if !contains(protected_branches, mr.TargetBranch) {
+				continue
+			}
+
 			var MRequest MergeRequest
 			likes := make(map[string]int)
 
