@@ -53,7 +53,8 @@ func ldapRequest(cfg config, filter string) []string {
 }
 
 func ldapConnect(cfg config) (*ldap.Conn, error) {
-	conn, err := ldap.Dial("tcp", cfg.Endpoints.DC.Host)
+	addr := fmt.Sprintf("%v:%v", cfg.Endpoints.DC.Host, cfg.Endpoints.DC.Port)
+	conn, err := ldap.Dial("tcp", addr)
 
 	if err != nil {
 		return nil, fmt.Errorf("Failed to connect. %s", err)
