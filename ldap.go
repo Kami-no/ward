@@ -36,7 +36,7 @@ func ldapRequest(cfg config, filter string) []string {
 	conn, err := ldapConnect(cfg)
 
 	if err != nil {
-		fmt.Printf("Failed to connect. %s", err)
+		fmt.Printf("LDAP failed: %s", err)
 		return nil
 	}
 
@@ -57,11 +57,13 @@ func ldapConnect(cfg config) (*ldap.Conn, error) {
 	conn, err := ldap.Dial("tcp", addr)
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to connect. %s", err)
+		return nil, fmt.Errorf("connection error: %s", err)
 	}
 
-	if err := conn.Bind(cfg.Credentials.User, cfg.Credentials.User); err != nil {
-		return nil, fmt.Errorf("Failed to bind. %s", err)
+	user := fmt.Sprintf("%v@%v", cfg.Credentials.User, cfg.Endpoints.DC.Domain)
+
+	if err := conn.Bind(user, cfg.Credentials.Password); err != nil {
+		return nil, fmt.Errorf("binding error: %s", err)
 	}
 
 	return conn, nil
