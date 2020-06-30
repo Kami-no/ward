@@ -27,7 +27,7 @@ Awards:
   NotReady: x
   NonCompliant: poop
 Projects:
-  - ID: 123
+  123:
     Teams:
       Backend:
         - user1
