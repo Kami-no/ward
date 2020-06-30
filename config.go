@@ -8,12 +8,6 @@ import (
 )
 
 type config struct {
-	MBad  string `yaml:"MBad"`
-	MDown string `yaml:"MDown"`
-	MFail string `yaml:"MFail"`
-	MGood string `yaml:"MGood"`
-	MUp   string `yaml:"MUp"`
-
 	SMail string `yaml:"SMail"`
 
 	Credentials struct {
