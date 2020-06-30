@@ -1,22 +1,11 @@
 ---
-GProject: 123
-GPUrl: https://git.example.com/my-group/my-repo
-GURL: https://git.example.com
-GUser: user
-LBase: DC=ad,DC=example,DC=com
-LHost: ad.example.com:389
-LPass: qwerty
-LUser: user@ad.example.com
 MBad: x
 MDown: thumbsdown
 MFail: poop
 MGood: heavy_check_mark
 MUp: thumbsup
-SHost: smtp.example.com
+
 SMail: user@example.com
-SPass: qwerty
-SPort: 587
-SUser: user
 VBackend:
   - user1
   - user2

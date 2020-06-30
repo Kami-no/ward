@@ -13,7 +13,11 @@ func mailSend(cfg config, rcpt []string, subj string, msg string) error {
 	m.SetHeader("Subject", subj)
 	m.SetBody("text/html", msg)
 
-	d := mail.NewDialer(cfg.SHost, cfg.SPort, cfg.SUser, cfg.SPass)
+	d := mail.NewDialer(
+		cfg.Endpoints.SMTP.Host,
+		cfg.Endpoints.SMTP.Port,
+		cfg.Credentials.User,
+		cfg.Credentials.Password)
 	d.StartTLSPolicy = mail.MandatoryStartTLS
 
 	if err := d.DialAndSend(m); err != nil {

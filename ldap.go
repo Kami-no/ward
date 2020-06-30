@@ -44,7 +44,7 @@ func ldapRequest(cfg config, filter string) []string {
 
 	filter = fmt.Sprintf("(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(|%v))", filter)
 
-	if mail, err = ldapList(conn, cfg.LBase, filter); err != nil {
+	if mail, err = ldapList(conn, cfg.Endpoints.DC.Base, filter); err != nil {
 		fmt.Printf("%v", err)
 		return nil
 	}
@@ -53,13 +53,13 @@ func ldapRequest(cfg config, filter string) []string {
 }
 
 func ldapConnect(cfg config) (*ldap.Conn, error) {
-	conn, err := ldap.Dial("tcp", cfg.LHost)
+	conn, err := ldap.Dial("tcp", cfg.Endpoints.DC.Host)
 
 	if err != nil {
 		return nil, fmt.Errorf("Failed to connect. %s", err)
 	}
 
-	if err := conn.Bind(cfg.LUser, cfg.LPass); err != nil {
+	if err := conn.Bind(cfg.Credentials.User, cfg.Credentials.User); err != nil {
 		return nil, fmt.Errorf("Failed to bind. %s", err)
 	}
 

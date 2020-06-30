@@ -8,24 +8,13 @@ import (
 )
 
 type config struct {
-	GProject  int      `yaml:"GProject"`
-	GPUrl     string   `yaml:"GPUrl"`
-	GURL      string   `yaml:"GURL"`
-	GUser     string   `yaml:"GUser"`
-	LBase     string   `yaml:"LBase"`
-	LHost     string   `yaml:"LHost"`
-	LPass     string   `yaml:"LPass"`
-	LUser     string   `yaml:"LUser"`
-	MBad      string   `yaml:"MBad"`
-	MDown     string   `yaml:"MDown"`
-	MFail     string   `yaml:"MFail"`
-	MGood     string   `yaml:"MGood"`
-	MUp       string   `yaml:"MUp"`
-	SHost     string   `yaml:"SHost"`
+	MBad  string `yaml:"MBad"`
+	MDown string `yaml:"MDown"`
+	MFail string `yaml:"MFail"`
+	MGood string `yaml:"MGood"`
+	MUp   string `yaml:"MUp"`
+
 	SMail     string   `yaml:"SMail"`
-	SPass     string   `yaml:"SPass"`
-	SPort     int      `yaml:"SPort"`
-	SUser     string   `yaml:"SUser"`
 	VBackend  []string `yaml:"VBackend"`
 	VFrontend []string `yaml:"VFrontend"`
 
