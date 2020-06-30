@@ -14,9 +14,7 @@ type config struct {
 	MGood string `yaml:"MGood"`
 	MUp   string `yaml:"MUp"`
 
-	SMail     string   `yaml:"SMail"`
-	VBackend  []string `yaml:"VBackend"`
-	VFrontend []string `yaml:"VFrontend"`
+	SMail string `yaml:"SMail"`
 
 	Credentials struct {
 		User     string `yaml:"User"`
@@ -42,11 +40,10 @@ type config struct {
 		NotReady     string `yaml:"NotReady"`
 		NonCompliant string `yaml:"NonCompliant"`
 	} `yaml:"Awards"`
-	Projects []*Project `yaml:"Projects"`
+	Projects map[int]*Project `yaml:"Projects"`
 }
 
 type Project struct {
-	ID    int                 `yaml:"ID"`
 	Teams map[string][]string `yaml:"Teams"`
 }
 

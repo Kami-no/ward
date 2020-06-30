@@ -6,12 +6,6 @@ MGood: heavy_check_mark
 MUp: thumbsup
 
 SMail: user@example.com
-VBackend:
-  - user1
-  - user2
-VFrontend:
-  - user1
-  - user2
 
 Credentials:
   User: user

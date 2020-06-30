@@ -63,7 +63,7 @@ type deadResults struct {
 	Authors  map[string]deadAuthor
 }
 
-func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrProject, error) {
+func checkPrjRequests(cfg config, projects map[int]*Project, list string) (map[int]MrProject, error) {
 	var mrs_opts *gitlab.ListProjectMergeRequestsOptions
 	MrProjects := make(map[int]MrProject)
 
@@ -108,7 +108,7 @@ func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrP
 	}
 
 	// Process projects
-	for _, project := range projects {
+	for pid, project := range projects {
 		var MrPrj MrProject
 		var consensus int
 
@@ -120,9 +120,9 @@ func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrP
 
 		// Get the list of protected branches
 		pbs_opts := &gitlab.ListProtectedBranchesOptions{}
-		pbs, _, err := git.ProtectedBranches.ListProtectedBranches(project.ID, pbs_opts)
+		pbs, _, err := git.ProtectedBranches.ListProtectedBranches(pid, pbs_opts)
 		if err != nil {
-			log.Printf("Failed to get list of protected branches for %v: %v", project.ID, err)
+			log.Printf("Failed to get list of protected branches for %v: %v", pid, err)
 			continue
 		}
 		var protected_branches []string
@@ -131,9 +131,9 @@ func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrP
 		}
 
 		// Get Merge Requests for project
-		mrs, _, err := git.MergeRequests.ListProjectMergeRequests(project.ID, mrs_opts)
+		mrs, _, err := git.MergeRequests.ListProjectMergeRequests(pid, mrs_opts)
 		if err != nil {
-			log.Printf("Failed to list Merge Requests for %v: %v", project.ID, err)
+			log.Printf("Failed to list Merge Requests for %v: %v", pid, err)
 			break
 		}
 
@@ -147,7 +147,7 @@ func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrP
 			var MRequest MergeRequest
 			likes := make(map[string]int)
 
-			awards, _, err := git.AwardEmoji.ListMergeRequestAwardEmoji(project.ID, mr.IID, &gitlab.ListAwardEmojiOptions{})
+			awards, _, err := git.AwardEmoji.ListMergeRequestAwardEmoji(pid, mr.IID, &gitlab.ListAwardEmojiOptions{})
 			if err != nil {
 				log.Printf("Failed to list MR awards: %v", err)
 				break
@@ -214,7 +214,7 @@ func checkPrjRequests(cfg config, projects []*Project, list string) (map[int]MrP
 			MrPrj.MR[mr.IID] = MRequest
 		}
 
-		MrProjects[project.ID] = MrPrj
+		MrProjects[pid] = MrPrj
 	}
 
 	return MrProjects, nil
@@ -393,12 +393,8 @@ func processMR(cfg config, actions []mrAction) {
 					log.Printf("Failed to send mail to recipient: %v", err)
 				}
 
-				for _, prj := range cfg.Projects {
-					if prj.ID == action.Pid {
-						for _, team := range prj.Teams {
-							ownersUsers = append(ownersUsers, team...)
-						}
-					}
+				for _, team := range cfg.Projects[action.Pid].Teams {
+					ownersUsers = append(ownersUsers, team...)
 				}
 
 				ownersEmail = ldapMail(cfg, ownersUsers)
@@ -443,10 +439,15 @@ func detectDead(cfg config) deadResults {
 		},
 	}
 
-	for _, project := range projects {
+	for pid, project := range projects {
+		var owners []string
+		for _, team := range project.Teams {
+			owners = append(owners, team...)
+		}
+
 		// Process all branches for the project not just latest
 		for {
-			branches, response, err := git.Branches.ListBranches(project.ID, branches_opts)
+			branches, response, err := git.Branches.ListBranches(pid, branches_opts)
 			if err != nil {
 				log.Printf("Failed to list branches: %v", err)
 				break
@@ -504,17 +505,17 @@ func detectDead(cfg config) deadResults {
 					} else {
 						mail = trueMail[branch.Commit.AuthorEmail]
 					}
-					undead.Authors[mail].Branches[project.ID] = append(undead.Authors[mail].Branches[project.ID], branch.Name)
+					undead.Authors[mail].Branches[pid] = append(undead.Authors[mail].Branches[pid], branch.Name)
 
 					// Fill in data for a the project
-					if _, found := undead.Projects[project.ID]; !found {
+					if _, found := undead.Projects[pid]; !found {
 						var prj_name string
 						var prj_url string
 
 						prj_opts := &gitlab.GetProjectOptions{}
-						prj, _, err := git.Projects.GetProject(project.ID, prj_opts)
+						prj, _, err := git.Projects.GetProject(pid, prj_opts)
 						if err != nil {
-							prj_name = fmt.Sprintf("%v", project.ID)
+							prj_name = fmt.Sprintf("%v", pid)
 							prj_url = cfg.Endpoints.GitLab
 							log.Printf("Failed to get project info: %v", err)
 						} else {
@@ -522,14 +523,14 @@ func detectDead(cfg config) deadResults {
 							prj_url = prj.WebURL
 						}
 
-						undead.Projects[project.ID] = deadProject{
+						undead.Projects[pid] = deadProject{
 							Branches: make(map[string]deadBranch),
-							Owners:   append(cfg.VBackend, cfg.VFrontend...),
+							Owners:   owners,
 							URL:      prj_url,
 							Name:     prj_name,
 						}
 					}
-					undead.Projects[project.ID].Branches[branch.Name] = deadBranch{
+					undead.Projects[pid].Branches[branch.Name] = deadBranch{
 						Age:    int(now.Sub(updated).Hours()) / 24,
 						Author: branch.Commit.AuthorName,
 					}
