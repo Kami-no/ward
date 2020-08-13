@@ -22,8 +22,10 @@ type config struct {
 			Base   string `yaml:"Base"`
 		} `yaml:"DC"`
 		SMTP struct {
-			Host string `yaml:"Host"`
-			Port int    `yaml:"Port"`
+			Host     string `yaml:"Host"`
+			Port     int    `yaml:"Port"`
+			User     string `yaml:"User"`
+			Password string `yaml:"Password"`
 		} `yaml:"SMTP"`
 		GitLab string `yaml:"GitLab"`
 	} `yaml:"Endpoints"`

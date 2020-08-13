@@ -16,8 +16,8 @@ func mailSend(cfg config, rcpt []string, subj string, msg string) error {
 	d := mail.NewDialer(
 		cfg.Endpoints.SMTP.Host,
 		cfg.Endpoints.SMTP.Port,
-		cfg.Credentials.User,
-		cfg.Credentials.Password)
+		cfg.Endpoints.SMTP.User,
+		cfg.Endpoints.SMTP.Password)
 	d.StartTLSPolicy = mail.MandatoryStartTLS
 
 	if err := d.DialAndSend(m); err != nil {

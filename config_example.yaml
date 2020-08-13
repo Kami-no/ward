@@ -13,6 +13,8 @@ Endpoints:
   SMTP:
     Host: smtp.example.com
     Port: 587
+    User: user
+    Password: qwerty
   GitLab: https://git.example.com
 Awards:
   Like: thumbsup
