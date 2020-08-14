@@ -1,11 +1,25 @@
 # Ward
 
-Simple tool to be a substitute for Merge Approves in cases when for some reasons you're unable to buy GitLab Subscription.
+Simple bot designed to supplement the free version of GitLab.
 
-As a bonus feature it has notifications for old branches.
+## Merge Approves
 
-It tracks MRs in GitLab, gets mail addresses from AD by account name and send notifications via mail.
+The free version of GitLab has no Merge Approves. Our team required them while has problems with buying it. Bot tracks emoji for MR.
 
-There is a variation about MR approves here depending on team number:
-* one team: 2 approves are required;
-* multiple teams: 1 approve from each team are required.
+MR to protected branch notifications:
+
+* MR considered good if it has enough :thumbsup:;
+* if MR merged and had not enough qualified :thumbsup: (list is set in its config) than MR is considered bad;
+* if MR has at least one :thumbsdown: than MR is considered bad;
+* good MR will be marked by the bot with :heavy_check_mark:;
+* bad MR will be marked by the bot with :x:;
+* if bad MR has been merged bot will mark it with :poop: and will notify people from its list;
+* there could be separate qualified teams to approve MR;
+* if there is only one team than MR will require at least 2 :thumbsup: (3 for devops/ansible - custom version of bot) and if there are multiple teams then at least 1 :thumbsup: per team (**TODO:** configurable).
+
+## Old branches
+
+Once a week bot checks its repositories for stale not protected branches that had no changes:
+
+* 1 week or more - notify the author of the last commit;
+* **TODO:**: 1 month or more - wipe the branch.
