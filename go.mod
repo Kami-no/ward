@@ -1,4 +1,4 @@
-module example.com/ward
+module github.com/Kami-no/ward
 
 go 1.15
 
