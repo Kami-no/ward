@@ -354,6 +354,15 @@ func processMR(cfg config, actions []mrAction) {
 			award_opts := &gitlab.CreateAwardEmojiOptions{Name: award[action.Award]}
 			_, _, _ = git.AwardEmoji.CreateMergeRequestAwardEmoji(action.Pid, action.Mid, award_opts)
 
+			// Notify reviewers (most likely onece per MR)
+			if action.Award == "notready" {
+				err := notifyReviewers(git, cfg.Projects[action.Pid].Teams, action.Pid, action.Mid)
+				if err != nil {
+					log.Printf("Failed to post notification message for %v@%v: %v",
+						action.Mid, action.Pid, err)
+				}
+			}
+
 			// Notify about non-compiant merge
 			if action.Award == "nc" {
 				var prj_name string
@@ -558,4 +567,20 @@ func deadAuthorTemplate(dAuthor deadAuthor) (string, error) {
 	output = buffer.String()
 
 	return output, nil
+}
+
+func notifyReviewers(git *gitlab.Client, reviewers map[string][]string, pid int, mid int) error {
+	msg := "Notifying reviewers:"
+	for _, team := range reviewers {
+		for _, user := range team {
+			msg = fmt.Sprintf("%v @%v", msg, user)
+		}
+	}
+
+	noteOpts := gitlab.CreateMergeRequestNoteOptions{
+		Body: &msg,
+	}
+	_, _, err := git.Notes.CreateMergeRequestNote(pid, mid, &noteOpts)
+
+	return err
 }
