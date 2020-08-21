@@ -112,10 +112,14 @@ func checkPrjRequests(cfg config, projects map[int]*Project, list string) (map[i
 		var MrPrj MrProject
 		var consensus int
 
-		if len(project.Teams) < 2 {
-			consensus = 2
+		if project.Votes > 0 {
+			consensus = project.Votes
 		} else {
-			consensus = 1
+			if len(project.Teams) < 2 {
+				consensus = 2
+			} else {
+				consensus = 1
+			}
 		}
 
 		// Get the list of protected branches

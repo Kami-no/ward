@@ -41,6 +41,7 @@ type config struct {
 
 type Project struct {
 	Teams map[string][]string `yaml:"Teams"`
+	Votes int                 `yaml:"Votes"`
 }
 
 func (c *config) getConfig() *config {

@@ -15,7 +15,7 @@ MR to protected branch notifications:
 * bad MR will be marked by the bot with :x:;
 * if bad MR has been merged bot will mark it with :poop: and will notify people from its list;
 * there could be several qualified teams to approve MR;
-* if there is only one team than MR will require at least 2 :thumbsup: and if there are multiple teams then at least 1 :thumbsup: per team (**TODO:** configurable).
+* by default if there is only one team than MR will require at least 2 :thumbsup: and if there are multiple teams then at least 1 :thumbsup: per team (number of votes per team is customizable at the project level in config).
 
 ## Old branches
 
