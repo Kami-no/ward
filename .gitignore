@@ -1,3 +1,5 @@
-.vscode/
+.*
+!.dockerignore
+!.gitignore
 config.yaml
 ward
