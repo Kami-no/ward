@@ -1,8 +1,10 @@
-package main
+package app
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/Kami-no/ward/src/app/util"
+	"github.com/Kami-no/ward/src/config"
 	"html/template"
 	"log"
 	"strings"
@@ -63,20 +65,20 @@ type deadResults struct {
 	Authors  map[string]deadAuthor
 }
 
-func checkPrjRequests(cfg config, projects map[int]*Project, list string) (map[int]MrProject, error) {
-	var mrs_opts *gitlab.ListProjectMergeRequestsOptions
+func checkPrjRequests(cfg *config.Config, projects map[int]*config.Project, list string) (map[int]MrProject, error) {
+	var mrsOpts *gitlab.ListProjectMergeRequestsOptions
 	MrProjects := make(map[int]MrProject)
 
-	git_opts := gitlab.WithBaseURL(cfg.Endpoints.GitLab)
+	gitOpts := gitlab.WithBaseURL(cfg.Endpoints.GitLab)
 	git, err := gitlab.NewBasicAuthClient(
-		cfg.Credentials.User, cfg.Credentials.Password, git_opts)
+		cfg.Credentials.User, cfg.Credentials.Password, gitOpts)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to connect to GitLab: %v", err)
 	}
 
 	switch list {
 	case "opened":
-		mrs_opts = &gitlab.ListProjectMergeRequestsOptions{
+		mrsOpts = &gitlab.ListProjectMergeRequestsOptions{
 			State:   gitlab.String("opened"),
 			OrderBy: gitlab.String("updated_at"),
 			Scope:   gitlab.String("all"),
@@ -87,7 +89,7 @@ func checkPrjRequests(cfg config, projects map[int]*Project, list string) (map[i
 			},
 		}
 	case "merged":
-		mrs_opts = &gitlab.ListProjectMergeRequestsOptions{
+		mrsOpts = &gitlab.ListProjectMergeRequestsOptions{
 			State:   gitlab.String("merged"),
 			OrderBy: gitlab.String("updated_at"),
 			Scope:   gitlab.String("all"),
@@ -97,7 +99,7 @@ func checkPrjRequests(cfg config, projects map[int]*Project, list string) (map[i
 			},
 		}
 	default:
-		mrs_opts = &gitlab.ListProjectMergeRequestsOptions{
+		mrsOpts = &gitlab.ListProjectMergeRequestsOptions{
 			OrderBy: gitlab.String("updated_at"),
 			Scope:   gitlab.String("all"),
 			ListOptions: gitlab.ListOptions{
@@ -123,19 +125,19 @@ func checkPrjRequests(cfg config, projects map[int]*Project, list string) (map[i
 		}
 
 		// Get the list of protected branches
-		pbs_opts := &gitlab.ListProtectedBranchesOptions{}
-		pbs, _, err := git.ProtectedBranches.ListProtectedBranches(pid, pbs_opts)
+		pbsOpts := &gitlab.ListProtectedBranchesOptions{}
+		pbs, _, err := git.ProtectedBranches.ListProtectedBranches(pid, pbsOpts)
 		if err != nil {
 			log.Printf("Failed to get list of protected branches for %v: %v", pid, err)
 			continue
 		}
-		var protected_branches []string
+		var protectedBranches []string
 		for _, pb := range pbs {
-			protected_branches = append(protected_branches, pb.Name)
+			protectedBranches = append(protectedBranches, pb.Name)
 		}
 
 		// Get Merge Requests for project
-		mrs, _, err := git.MergeRequests.ListProjectMergeRequests(pid, mrs_opts)
+		mrs, _, err := git.MergeRequests.ListProjectMergeRequests(pid, mrsOpts)
 		if err != nil {
 			log.Printf("Failed to list Merge Requests for %v: %v", pid, err)
 			break
@@ -144,7 +146,7 @@ func checkPrjRequests(cfg config, projects map[int]*Project, list string) (map[i
 		// Process Merge Requests
 		for _, mr := range mrs {
 			// Ignore MR if target branch is not protected
-			if !contains(protected_branches, mr.TargetBranch) {
+			if !util.Contains(protectedBranches, mr.TargetBranch) {
 				continue
 			}
 
@@ -165,7 +167,7 @@ func checkPrjRequests(cfg config, projects map[int]*Project, list string) (map[i
 					case cfg.Awards.Like:
 						for team, members := range project.Teams {
 							if likes[team] < consensus {
-								if contains(members, strings.ToLower(award.User.Username)) {
+								if util.Contains(members, strings.ToLower(award.User.Username)) {
 									likes[team]++
 								}
 							}
@@ -339,24 +341,24 @@ func evalMergedRequests(MRProjects map[int]MrProject) []mrAction {
 	return actions
 }
 
-func processMR(cfg config, actions []mrAction) {
+func processMR(cfg *config.Config, actions []mrAction) {
 	award := map[string]string{
 		"ready":    cfg.Awards.Ready,
 		"notready": cfg.Awards.NotReady,
 		"nc":       cfg.Awards.NonCompliant,
 	}
 
-	git_opts := gitlab.WithBaseURL(cfg.Endpoints.GitLab)
+	gitOpts := gitlab.WithBaseURL(cfg.Endpoints.GitLab)
 	git, err := gitlab.NewBasicAuthClient(
-		cfg.Credentials.User, cfg.Credentials.Password, git_opts)
+		cfg.Credentials.User, cfg.Credentials.Password, gitOpts)
 	if err != nil {
 		fmt.Printf("Failed to connect to GitLab: %v", err)
 	}
 
 	for _, action := range actions {
 		if action.State {
-			award_opts := &gitlab.CreateAwardEmojiOptions{Name: award[action.Award]}
-			_, _, _ = git.AwardEmoji.CreateMergeRequestAwardEmoji(action.Pid, action.Mid, award_opts)
+			awardOpts := &gitlab.CreateAwardEmojiOptions{Name: award[action.Award]}
+			_, _, _ = git.AwardEmoji.CreateMergeRequestAwardEmoji(action.Pid, action.Mid, awardOpts)
 
 			// Notify reviewers (most likely onece per MR)
 			if action.Award == "notready" {
@@ -369,8 +371,8 @@ func processMR(cfg config, actions []mrAction) {
 
 			// Notify about non-compiant merge
 			if action.Award == "nc" {
-				var prj_name string
-				var prj_url string
+				var prjName string
+				var prjUrl string
 				var users []string
 				var emails []string
 				var subj string
@@ -381,12 +383,12 @@ func processMR(cfg config, actions []mrAction) {
 				prj_opts := &gitlab.GetProjectOptions{}
 				prj, _, err := git.Projects.GetProject(action.Pid, prj_opts)
 				if err != nil {
-					prj_name = fmt.Sprintf("%v", action.Pid)
-					prj_url = cfg.Endpoints.GitLab
+					prjName = fmt.Sprintf("%v", action.Pid)
+					prjUrl = cfg.Endpoints.GitLab
 					log.Printf("Failed to get project info: %v", err)
 				} else {
-					prj_name = prj.NameWithNamespace
-					prj_url = prj.WebURL
+					prjName = prj.NameWithNamespace
+					prjUrl = prj.WebURL
 				}
 
 				log.Printf("Non-compliant MR detected: %v@%v", action.Mid, action.Pid)
@@ -400,7 +402,7 @@ func processMR(cfg config, actions []mrAction) {
 						"<a href='%v'>%v</a> without 2 qualified approves "+
 						"or negative review you've failed repository's Code of Conduct.</p>"+
 						"<p>This incident will be reported.</p>",
-					action.Path, action.Mid, prj_url, prj_name)
+					action.Path, action.Mid, prjUrl, prjName)
 
 				if err := mailSend(cfg, emails, subj, msg); err != nil {
 					log.Printf("Failed to send mail to recipient: %v", err)
@@ -416,7 +418,7 @@ func processMR(cfg config, actions []mrAction) {
 				msg = fmt.Sprintf(
 					"<p><a href='%v'>Merge Request #%v</a> in project <a href='%v'>%v</a> "+
 						"does not meet requirements but it was merged!</p>",
-					action.Path, action.Mid, prj_url, prj_name)
+					action.Path, action.Mid, prjUrl, prjName)
 
 				if err := mailSend(cfg, ownersEmail, subj, msg); err != nil {
 					log.Printf("Failed to send mail to owners: %v", err)
@@ -428,7 +430,7 @@ func processMR(cfg config, actions []mrAction) {
 	}
 }
 
-func detectDead(cfg config) deadResults {
+func detectDead(cfg *config.Config) deadResults {
 	var undead deadResults
 	undead.Authors = make(map[string]deadAuthor)
 	undead.Projects = make(map[int]deadProject)

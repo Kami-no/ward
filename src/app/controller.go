@@ -1,21 +1,29 @@
-package main
+package app
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Kami-no/ward/src/config"
 	"log"
 	"net/http"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
+type MRController struct {
+	Config *config.Config
+}
+
+func NewMRController(config *config.Config) *MRController {
+	return &MRController{
+		Config: config,
+	}
+}
+
+func (c *MRController) Handler(w http.ResponseWriter, _ *http.Request) {
 	fmt.Fprintf(w, "ok")
 }
 
-func handleMR(w http.ResponseWriter, r *http.Request) {
-	var cfg config
-	cfg.getConfig()
-
-	mrs, err := checkPrjRequests(cfg, cfg.Projects, "any")
+func (c *MRController) HandleMR(w http.ResponseWriter, _ *http.Request) {
+	mrs, err := checkPrjRequests(c.Config, c.Config.Projects, "any")
 	if err != nil {
 		log.Println(err)
 	}
@@ -27,11 +35,9 @@ func handleMR(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, output)
 }
 
-func handleMROpened(w http.ResponseWriter, r *http.Request) {
-	var cfg config
-	cfg.getConfig()
+func (c *MRController) HandleMROpened(w http.ResponseWriter, _ *http.Request) {
 
-	mrs, err := checkPrjRequests(cfg, cfg.Projects, "opened")
+	mrs, err := checkPrjRequests(c.Config, c.Config.Projects, "opened")
 	if err != nil {
 		log.Println(err)
 	}
@@ -41,11 +47,8 @@ func handleMROpened(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, output)
 }
 
-func handleMRMerged(w http.ResponseWriter, r *http.Request) {
-	var cfg config
-	cfg.getConfig()
-
-	mrs, err := checkPrjRequests(cfg, cfg.Projects, "merged")
+func (c *MRController) HandleMRMerged(w http.ResponseWriter, _ *http.Request) {
+	mrs, err := checkPrjRequests(c.Config, c.Config.Projects, "merged")
 	if err != nil {
 		log.Println(err)
 	}
@@ -59,11 +62,8 @@ func handleMRMerged(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, output)
 }
 
-func handleMRApply(w http.ResponseWriter, r *http.Request) {
-	var cfg config
-	cfg.getConfig()
-
-	data := detectMR(cfg)
+func (c *MRController) HandleMRApply(w http.ResponseWriter, _ *http.Request) {
+	data := DetectMR(c.Config)
 
 	out, _ := json.Marshal(data)
 	output := fmt.Sprintf("%v", string(out))
@@ -72,11 +72,8 @@ func handleMRApply(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, output)
 }
 
-func handleDead(w http.ResponseWriter, r *http.Request) {
-	var cfg config
-	cfg.getConfig()
-
-	data := detectDead(cfg)
+func (c *MRController) HandleDead(w http.ResponseWriter, _ *http.Request) {
+	data := detectDead(c.Config)
 	undead, _ := json.Marshal(data)
 
 	output := fmt.Sprintf("%v", string(undead))
@@ -85,11 +82,8 @@ func handleDead(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, output)
 }
 
-func handleDeadLetter(w http.ResponseWriter, r *http.Request) {
-	var cfg config
-	cfg.getConfig()
-
-	undead := detectDead(cfg)
+func (c *MRController) HandleDeadLetter(w http.ResponseWriter, _ *http.Request) {
+	undead := detectDead(c.Config)
 	for _, v := range undead.Authors {
 		v.Projects = undead.Projects
 		template, err := deadAuthorTemplate(v)

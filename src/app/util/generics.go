@@ -1,6 +1,6 @@
-package main
+package util
 
-func contains(arr []string, str string) bool {
+func Contains(arr []string, str string) bool {
 	for _, a := range arr {
 		if a == str {
 			return true
