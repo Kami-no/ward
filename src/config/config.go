@@ -46,6 +46,21 @@ type Project struct {
 	Votes int                 `yaml:"Votes"`
 }
 
+type TeamsWithMembers map[string]map[string]struct{}
+
+func (p *Project) GetTeamsWithMembers() TeamsWithMembers {
+	teamNamesWithMembers := make(TeamsWithMembers, len(p.Teams))
+	for team, members := range p.Teams {
+		membersMap := make(map[string]struct{})
+		for _, member := range members {
+			membersMap[member] = struct{}{}
+		}
+		teamNamesWithMembers[team] = membersMap
+	}
+
+	return teamNamesWithMembers
+}
+
 func NewConfig() *Config {
 	yamlFile, err := ioutil.ReadFile(fileName)
 	if err != nil {
