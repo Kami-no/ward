@@ -24,23 +24,3 @@ func DetectDeadBrunches(cfg *config.Config) {
 		}
 	}
 }
-
-func DetectMR(cfg *config.Config) []mrAction {
-	mrsOpened, err := checkPrjRequests(cfg, cfg.Projects, "opened")
-	if err != nil {
-		log.Println(err)
-	}
-	actionsOpened := evalOpenedRequests(mrsOpened)
-
-	mrsMerged, err := checkPrjRequests(cfg, cfg.Projects, "merged")
-	if err != nil {
-		log.Println(err)
-	}
-	actionsMerged := evalMergedRequests(mrsMerged)
-
-	actions := append(actionsOpened, actionsMerged...)
-
-	processMR(cfg, actions)
-
-	return actions
-}
