@@ -1,12 +1,13 @@
 package app
 
 import (
+	"github.com/Kami-no/ward/src/app/client"
 	"github.com/Kami-no/ward/src/config"
 	"log"
 )
 
-func DetectDeadBrunches(cfg *config.Config) {
-	undead := detectDead(cfg)
+func DetectDeadBrunches(client client.GitlabClient, cfg *config.Config) {
+	undead := client.DetectDead()
 	for rcpt, v := range undead.Authors {
 		if rcpt == "unidentified@any.local" {
 			continue

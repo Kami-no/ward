@@ -6,6 +6,7 @@ import (
 	"github.com/Kami-no/ward/src/app"
 	"github.com/Kami-no/ward/src/app/client"
 	"github.com/Kami-no/ward/src/app/client/gitlabclient"
+	"github.com/Kami-no/ward/src/app/ldap"
 	"github.com/Kami-no/ward/src/config"
 	"github.com/xanzy/go-gitlab"
 	"log"
@@ -27,15 +28,17 @@ func main() {
 		panic(fmt.Errorf("Failed to connect to GitLab: %v", err))
 	}
 
-	gitlabClient := client.NewGitlabClient(cfg, gitlabclient.NewDefaultGitlabClient(httpGitlabClient))
-	controller := app.NewMRController(cfg, gitlabClient)
+	ldapService := ldap.NewLdapServiceImpl(cfg)
+
+	gitlabClient := client.NewGitlabClient(cfg, gitlabclient.NewDefaultGitlabClient(httpGitlabClient), ldapService)
+	controller := app.NewMRController(cfg, gitlabClient, ldapService)
 
 	s, err := scheduler.NewScheduler(1000)
 	if err != nil {
 		panic(err)
 	}
-	s.Every().Second(15).Do(app.DetectMR, gitlabClient, cfg)
-	s.Every().Second(0).Minute(0).Hour(2).Weekday(1).Do(app.DetectDeadBrunches, cfg)
+	s.Every().Second(15).Do(app.DetectMR, ldapService, gitlabClient, cfg)
+	s.Every().Second(0).Minute(0).Hour(2).Weekday(1).Do(app.DetectDeadBrunches, gitlabClient, cfg)
 
 	http.HandleFunc("/", controller.Handler)
 	http.HandleFunc("/mr", controller.HandleMR)

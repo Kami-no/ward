@@ -4,20 +4,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kami-no/ward/src/app/client"
+	"github.com/Kami-no/ward/src/app/ldap"
 	"github.com/Kami-no/ward/src/config"
 	"log"
 	"net/http"
 )
 
 type MRController struct {
-	Config *config.Config
-	Client client.GitlabClient
+	Config      *config.Config
+	Client      client.GitlabClient
+	LdapService ldap.Service
 }
 
-func NewMRController(config *config.Config, client client.GitlabClient) *MRController {
+func NewMRController(config *config.Config, client client.GitlabClient, ldapService ldap.Service) *MRController {
 	return &MRController{
-		Config: config,
-		Client: client,
+		Config:      config,
+		Client:      client,
+		LdapService: ldapService,
 	}
 }
 
@@ -66,7 +69,7 @@ func (c *MRController) HandleMRMerged(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (c *MRController) HandleMRApply(w http.ResponseWriter, _ *http.Request) {
-	data := DetectMR(c.Client, c.Config)
+	data := DetectMR(c.LdapService, c.Client, c.Config)
 
 	out, _ := json.Marshal(data)
 	output := fmt.Sprintf("%v", string(out))
@@ -76,7 +79,7 @@ func (c *MRController) HandleMRApply(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (c *MRController) HandleDead(w http.ResponseWriter, _ *http.Request) {
-	data := detectDead(c.Config)
+	data := c.Client.DetectDead()
 	undead, _ := json.Marshal(data)
 
 	output := fmt.Sprintf("%v", string(undead))
@@ -86,7 +89,7 @@ func (c *MRController) HandleDead(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (c *MRController) HandleDeadLetter(w http.ResponseWriter, _ *http.Request) {
-	undead := detectDead(c.Config)
+	undead := c.Client.DetectDead()
 	for _, v := range undead.Authors {
 		v.Projects = undead.Projects
 		template, err := deadAuthorTemplate(v)

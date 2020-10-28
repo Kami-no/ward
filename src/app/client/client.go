@@ -1,29 +1,35 @@
 package client
 
 import (
+	"fmt"
 	"github.com/Kami-no/ward/src/app/client/gitlabclient"
+	"github.com/Kami-no/ward/src/app/ldap"
 	"github.com/Kami-no/ward/src/config"
 	"github.com/xanzy/go-gitlab"
 	"log"
 	"strings"
+	"time"
 )
 
 type GitlabClient interface {
 	CheckPrjRequests(projects map[int]*config.Project, list string) (map[int]MrProject, error)
+	DetectDead() DeadResults
 }
 
 var _ GitlabClient = (*client)(nil)
 
-func NewGitlabClient(config *config.Config, gitlabClient gitlabclient.GitlabClient) *client {
+func NewGitlabClient(config *config.Config, gitlabClient gitlabclient.GitlabClient, service ldap.Service) *client {
 	return &client{
-		Cfg:    config,
-		Client: gitlabClient,
+		Cfg:         config,
+		Client:      gitlabClient,
+		LdapService: service,
 	}
 }
 
 type client struct {
-	Cfg    *config.Config
-	Client gitlabclient.GitlabClient
+	Cfg         *config.Config
+	Client      gitlabclient.GitlabClient
+	LdapService ldap.Service
 }
 
 func (c *client) CheckPrjRequests(projects map[int]*config.Project, list string) (map[int]MrProject, error) {
@@ -181,4 +187,129 @@ func (c *client) CheckPrjRequests(projects map[int]*config.Project, list string)
 	}
 
 	return MrProjects, nil
+}
+
+func (c *client) DetectDead() DeadResults {
+	var undead DeadResults
+	undead.Authors = make(map[string]DeadAuthor)
+	undead.Projects = make(map[int]DeadProject)
+	trueMail := make(map[string]string)
+
+	projects := c.Cfg.Projects
+
+	now := time.Now()
+
+	branchesOpts := &gitlab.ListBranchesOptions{
+		ListOptions: gitlab.ListOptions{
+			PerPage: 10,
+			Page:    1,
+		},
+	}
+
+	for pid, project := range projects {
+		var owners []string
+		for _, team := range project.Teams {
+			owners = append(owners, team...)
+		}
+
+		// Process all branches for the project not just latest
+		for {
+			branches, response, err := c.Client.ListBranches(pid, branchesOpts)
+			if err != nil {
+				log.Printf("Failed to list branches: %v", err)
+				break
+			}
+
+			for _, branch := range branches {
+				var name string
+				var mail string
+
+				// Ignore protected branches
+				if branch.Protected {
+					continue
+				}
+
+				updated := *branch.Commit.AuthoredDate
+				if now.Sub(updated).Hours() >= 7*24 {
+					if _, found := trueMail[branch.Commit.AuthorEmail]; !found {
+						// Validate true mail
+						if c.LdapService.Check(branch.Commit.AuthorEmail) {
+							name = branch.Commit.AuthorName
+							mail = branch.Commit.AuthorEmail
+						} else {
+							var rcptUsers []string
+
+							rcptUser := strings.Split(branch.Commit.AuthorEmail, "@")
+							rcptUsers = append(rcptUsers, rcptUser[0])
+							rcptEmails := c.LdapService.ListMails(rcptUsers)
+
+							if len(rcptEmails) > 0 {
+								name = branch.Commit.AuthorName
+								mail = rcptEmails[0]
+							} else {
+								rcptEmails := c.LdapService.ListMails([]string{branch.Commit.AuthorName})
+								if len(rcptEmails) > 0 {
+									name = branch.Commit.AuthorName
+									mail = rcptEmails[0]
+								} else {
+									name = "Unidentified"
+									mail = "unidentified@any.local"
+									log.Printf("Unidentified author: %v - %v",
+										branch.Commit.AuthorName, branch.Commit.AuthorEmail)
+								}
+
+							}
+						}
+
+						trueMail[branch.Commit.AuthorEmail] = mail
+
+						if _, found := undead.Authors[mail]; !found {
+							undead.Authors[mail] = DeadAuthor{
+								Name:     name,
+								Branches: make(map[int][]string),
+							}
+						}
+					} else {
+						mail = trueMail[branch.Commit.AuthorEmail]
+					}
+					undead.Authors[mail].Branches[pid] = append(undead.Authors[mail].Branches[pid], branch.Name)
+
+					// Fill in data for a the project
+					if _, found := undead.Projects[pid]; !found {
+						var prjName string
+						var prjUrl string
+
+						prjOpts := &gitlab.GetProjectOptions{}
+						prj, _, err := c.Client.GetProject(pid, prjOpts)
+						if err != nil {
+							prjName = fmt.Sprintf("%v", pid)
+							prjUrl = c.Cfg.Endpoints.GitLab
+							log.Printf("Failed to get project info: %v", err)
+						} else {
+							prjName = prj.NameWithNamespace
+							prjUrl = prj.WebURL
+						}
+
+						undead.Projects[pid] = DeadProject{
+							Branches: make(map[string]DeadBranch),
+							Owners:   owners,
+							URL:      prjUrl,
+							Name:     prjName,
+						}
+					}
+					undead.Projects[pid].Branches[branch.Name] = DeadBranch{
+						Age:    int(now.Sub(updated).Hours()) / 24,
+						Author: branch.Commit.AuthorName,
+					}
+				}
+			}
+
+			if response.CurrentPage >= response.TotalPages {
+				break
+			}
+			branchesOpts.Page = response.NextPage
+		}
+	}
+	return undead
+
 }

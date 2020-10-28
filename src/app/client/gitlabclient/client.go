@@ -6,6 +6,8 @@ type GitlabClient interface {
 	ListProtectedBranches(pid interface{}, opt *gitlab.ListProtectedBranchesOptions, options ...gitlab.RequestOptionFunc) ([]*gitlab.ProtectedBranch, *gitlab.Response, error)
 	ListProjectMergeRequests(pid interface{}, opt *gitlab.ListProjectMergeRequestsOptions, options ...gitlab.RequestOptionFunc) ([]*gitlab.MergeRequest, *gitlab.Response, error)
 	ListMergeRequestAwardEmoji(pid interface{}, mergeRequestIID int, opt *gitlab.ListAwardEmojiOptions, options ...gitlab.RequestOptionFunc) ([]*gitlab.AwardEmoji, *gitlab.Response, error)
+	GetProject(pid interface{}, opt *gitlab.GetProjectOptions, options ...gitlab.RequestOptionFunc) (*gitlab.Project, *gitlab.Response, error)
+	ListBranches(pid interface{}, opt *gitlab.ListBranchesOptions, options ...gitlab.RequestOptionFunc) ([]*gitlab.Branch, *gitlab.Response, error)
 }
 
 type defaultClient struct {
@@ -30,4 +32,12 @@ func (d *defaultClient) ListProjectMergeRequests(pid interface{}, opt *gitlab.Li
 
 func (d *defaultClient) ListMergeRequestAwardEmoji(pid interface{}, mergeRequestIID int, opt *gitlab.ListAwardEmojiOptions, options ...gitlab.RequestOptionFunc) ([]*gitlab.AwardEmoji, *gitlab.Response, error) {
 	return d.httpClient.AwardEmoji.ListMergeRequestAwardEmoji(pid, mergeRequestIID, opt, options...)
+}
+
+func (d *defaultClient) GetProject(pid interface{}, opt *gitlab.GetProjectOptions, options ...gitlab.RequestOptionFunc) (*gitlab.Project, *gitlab.Response, error) {
+	return d.httpClient.Projects.GetProject(pid, opt, options...)
+}
+
+func (d *defaultClient) ListBranches(pid interface{}, opt *gitlab.ListBranchesOptions, options ...gitlab.RequestOptionFunc) ([]*gitlab.Branch, *gitlab.Response, error) {
+	return d.httpClient.Branches.ListBranches(pid, opt, options...)
 }

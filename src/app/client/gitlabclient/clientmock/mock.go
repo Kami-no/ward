@@ -30,3 +30,13 @@ func (c *ClientMock) ListMergeRequestAwardEmoji(pid interface{}, mergeRequestIID
 	arguments := c.Called(pid, mergeRequestIID, opt, options)
 	return arguments.Get(0).([]*gitlab.AwardEmoji), arguments.Get(1).(*gitlab.Response), arguments.Error(2)
 }
+
+func (c *ClientMock) GetProject(pid interface{}, opt *gitlab.GetProjectOptions, options ...gitlab.RequestOptionFunc) (*gitlab.Project, *gitlab.Response, error) {
+	arguments := c.Called(pid, opt, options)
+	return arguments.Get(0).(*gitlab.Project), arguments.Get(1).(*gitlab.Response), arguments.Error(2)
+}
+
+func (c *ClientMock) ListBranches(pid interface{}, opt *gitlab.ListBranchesOptions, options ...gitlab.RequestOptionFunc) ([]*gitlab.Branch, *gitlab.Response, error) {
+	arguments := c.Called(pid, opt, options)
+	return arguments.Get(0).([]*gitlab.Branch), arguments.Get(1).(*gitlab.Response), arguments.Error(2)
+}
