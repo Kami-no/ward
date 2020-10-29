@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"io/ioutil"
@@ -7,7 +7,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type config struct {
+const fileName = "config.yaml"
+
+type Config struct {
 	SMail string `yaml:"SMail"`
 
 	Credentials struct {
@@ -44,16 +46,17 @@ type Project struct {
 	Votes int                 `yaml:"Votes"`
 }
 
-func (c *config) getConfig() *config {
-
-	yamlFile, err := ioutil.ReadFile("config.yaml")
+func NewConfig() *Config {
+	yamlFile, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}
-	err = yaml.Unmarshal(yamlFile, c)
+
+	var c Config
+	err = yaml.Unmarshal(yamlFile, &c)
 	if err != nil {
 		log.Fatalf("Unmarshal: %v", err)
 	}
 
-	return c
+	return &c
 }

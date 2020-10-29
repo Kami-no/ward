@@ -1,12 +1,13 @@
-package main
+package app
 
 import (
 	"fmt"
+	"github.com/Kami-no/ward/src/config"
 
 	"github.com/go-ldap/ldap/v3"
 )
 
-func ldapCheck(cfg config, email string) bool {
+func ldapCheck(cfg *config.Config, email string) bool {
 	filter := fmt.Sprintf("(mail=%v)", email)
 
 	mail := ldapRequest(cfg, filter)
@@ -14,7 +15,7 @@ func ldapCheck(cfg config, email string) bool {
 	return len(mail) > 0
 }
 
-func ldapMail(cfg config, users []string) []string {
+func ldapMail(cfg *config.Config, users []string) []string {
 	var filter string
 
 	if len(users) == 0 {
@@ -30,7 +31,7 @@ func ldapMail(cfg config, users []string) []string {
 	return mail
 }
 
-func ldapRequest(cfg config, filter string) []string {
+func ldapRequest(cfg *config.Config, filter string) []string {
 	var mail []string
 
 	conn, err := ldapConnect(cfg)
@@ -52,7 +53,7 @@ func ldapRequest(cfg config, filter string) []string {
 	return mail
 }
 
-func ldapConnect(cfg config) (*ldap.Conn, error) {
+func ldapConnect(cfg *config.Config) (*ldap.Conn, error) {
 	addr := fmt.Sprintf("%v:%v", cfg.Endpoints.DC.Host, cfg.Endpoints.DC.Port)
 	conn, err := ldap.Dial("tcp", addr)
 

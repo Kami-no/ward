@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/Kami-no/ward/src/app"
+	"github.com/Kami-no/ward/src/config"
 	"log"
 	"net/http"
 	"os"
@@ -12,8 +14,8 @@ import (
 )
 
 func main() {
-	var cfg config
-	cfg.getConfig()
+	cfg := config.NewConfig()
+	controller := app.NewMRController(cfg)
 
 	log.SetOutput(os.Stdout)
 
@@ -21,16 +23,16 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	s.Every().Second(15).Do(detectMR, cfg)
-	s.Every().Second(0).Minute(0).Hour(2).Weekday(1).Do(detectDeadBrunches, cfg)
+	s.Every().Second(15).Do(app.DetectMR, cfg)
+	s.Every().Second(0).Minute(0).Hour(2).Weekday(1).Do(app.DetectDeadBrunches, cfg)
 
-	http.HandleFunc("/", handler)
-	http.HandleFunc("/mr", handleMR)
-	http.HandleFunc("/mr/opened", handleMROpened)
-	http.HandleFunc("/mr/merged", handleMRMerged)
-	http.HandleFunc("/mr/apply", handleMRApply)
-	http.HandleFunc("/dead", handleDead)
-	http.HandleFunc("/dead/letter", handleDeadLetter)
+	http.HandleFunc("/", controller.Handler)
+	http.HandleFunc("/mr", controller.HandleMR)
+	http.HandleFunc("/mr/opened", controller.HandleMROpened)
+	http.HandleFunc("/mr/merged", controller.HandleMRMerged)
+	http.HandleFunc("/mr/apply", controller.HandleMRApply)
+	http.HandleFunc("/dead", controller.HandleDead)
+	http.HandleFunc("/dead/letter", controller.HandleDeadLetter)
 
 	server := &http.Server{
 		Addr:         ":8081",

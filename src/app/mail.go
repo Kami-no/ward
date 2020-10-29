@@ -1,12 +1,13 @@
-package main
+package app
 
 import (
 	"fmt"
+	"github.com/Kami-no/ward/src/config"
 
 	"gopkg.in/mail.v2"
 )
 
-func mailSend(cfg config, rcpt []string, subj string, msg string) error {
+func mailSend(cfg *config.Config, rcpt []string, subj string, msg string) error {
 	m := mail.NewMessage()
 	m.SetHeader("From", cfg.SMail)
 	m.SetHeader("To", rcpt...)

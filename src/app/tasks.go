@@ -1,10 +1,11 @@
-package main
+package app
 
 import (
+	"github.com/Kami-no/ward/src/config"
 	"log"
 )
 
-func detectDeadBrunches(cfg config) {
+func DetectDeadBrunches(cfg *config.Config) {
 	undead := detectDead(cfg)
 	for rcpt, v := range undead.Authors {
 		if rcpt == "unidentified@any.local" {
@@ -24,7 +25,7 @@ func detectDeadBrunches(cfg config) {
 	}
 }
 
-func detectMR(cfg config) []mrAction {
+func DetectMR(cfg *config.Config) []mrAction {
 	mrsOpened, err := checkPrjRequests(cfg, cfg.Projects, "opened")
 	if err != nil {
 		log.Println(err)
