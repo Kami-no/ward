@@ -3,7 +3,6 @@ package app
 import (
 	"bytes"
 	"fmt"
-	"github.com/Kami-no/ward/src/app/util"
 	"github.com/Kami-no/ward/src/config"
 	"html/template"
 	"log"
@@ -131,9 +130,10 @@ func checkPrjRequests(cfg *config.Config, projects map[int]*config.Project, list
 			log.Printf("Failed to get list of protected branches for %v: %v", pid, err)
 			continue
 		}
-		var protectedBranches []string
+		var protectedBranches = make(map[string]struct{}, len(pbs))
+
 		for _, pb := range pbs {
-			protectedBranches = append(protectedBranches, pb.Name)
+			protectedBranches[pb.Name] = struct{}{}
 		}
 
 		// Get Merge Requests for project
@@ -146,7 +146,7 @@ func checkPrjRequests(cfg *config.Config, projects map[int]*config.Project, list
 		// Process Merge Requests
 		for _, mr := range mrs {
 			// Ignore MR if target branch is not protected
-			if !util.Contains(protectedBranches, mr.TargetBranch) {
+			if _, ok := protectedBranches[mr.TargetBranch]; !ok {
 				continue
 			}
 
@@ -162,12 +162,14 @@ func checkPrjRequests(cfg *config.Config, projects map[int]*config.Project, list
 			// Process awards
 			for _, award := range awards {
 				// Check group awards
+				username := strings.ToLower(award.User.Username)
+
 				if award.User.Username != mr.Author.Username {
 					switch award.Name {
 					case cfg.Awards.Like:
-						for team, members := range project.Teams {
+						for team, members := range project.GetTeamsWithMembers() {
 							if likes[team] < consensus {
-								if util.Contains(members, strings.ToLower(award.User.Username)) {
+								if _, ok := members[username]; ok {
 									likes[team]++
 								}
 							}
@@ -178,7 +180,7 @@ func checkPrjRequests(cfg *config.Config, projects map[int]*config.Project, list
 				}
 
 				// Check service awards
-				if strings.ToLower(award.User.Username) == cfg.Credentials.User {
+				if username == cfg.Credentials.User {
 					switch award.Name {
 					case cfg.Awards.Ready:
 						MRequest.Awards.Ready = award.ID
@@ -440,14 +442,14 @@ func detectDead(cfg *config.Config) deadResults {
 
 	now := time.Now()
 
-	git_opts := gitlab.WithBaseURL(cfg.Endpoints.GitLab)
+	gitOpts := gitlab.WithBaseURL(cfg.Endpoints.GitLab)
 	git, err := gitlab.NewBasicAuthClient(
-		cfg.Credentials.User, cfg.Credentials.Password, git_opts)
+		cfg.Credentials.User, cfg.Credentials.Password, gitOpts)
 	if err != nil {
 		fmt.Printf("Failed to connect to GitLab: %v", err)
 	}
 
-	branches_opts := &gitlab.ListBranchesOptions{
+	branchesOpts := &gitlab.ListBranchesOptions{
 		ListOptions: gitlab.ListOptions{
 			PerPage: 10,
 			Page:    1,
@@ -462,7 +464,7 @@ func detectDead(cfg *config.Config) deadResults {
 
 		// Process all branches for the project not just latest
 		for {
-			branches, response, err := git.Branches.ListBranches(pid, branches_opts)
+			branches, response, err := git.Branches.ListBranches(pid, branchesOpts)
 			if err != nil {
 				log.Printf("Failed to list branches: %v", err)
 				break
@@ -524,25 +526,25 @@ func detectDead(cfg *config.Config) deadResults {
 
 					// Fill in data for a the project
 					if _, found := undead.Projects[pid]; !found {
-						var prj_name string
-						var prj_url string
+						var prjName string
+						var prjUrl string
 
 						prj_opts := &gitlab.GetProjectOptions{}
 						prj, _, err := git.Projects.GetProject(pid, prj_opts)
 						if err != nil {
-							prj_name = fmt.Sprintf("%v", pid)
-							prj_url = cfg.Endpoints.GitLab
+							prjName = fmt.Sprintf("%v", pid)
+							prjUrl = cfg.Endpoints.GitLab
 							log.Printf("Failed to get project info: %v", err)
 						} else {
-							prj_name = prj.NameWithNamespace
-							prj_url = prj.WebURL
+							prjName = prj.NameWithNamespace
+							prjUrl = prj.WebURL
 						}
 
 						undead.Projects[pid] = deadProject{
 							Branches: make(map[string]deadBranch),
 							Owners:   owners,
-							URL:      prj_url,
-							Name:     prj_name,
+							URL:      prjUrl,
+							Name:     prjName,
 						}
 					}
 					undead.Projects[pid].Branches[branch.Name] = deadBranch{
@@ -555,7 +557,7 @@ func detectDead(cfg *config.Config) deadResults {
 			if response.CurrentPage >= response.TotalPages {
 				break
 			}
-			branches_opts.Page = response.NextPage
+			branchesOpts.Page = response.NextPage
 		}
 	}
 	return undead
