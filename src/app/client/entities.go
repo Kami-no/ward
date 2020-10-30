@@ -16,3 +16,26 @@ type MergeRequest struct {
 		NonCompliant int
 	}
 }
+
+type DeadBranch struct {
+	Author string
+	Age    int
+}
+
+type DeadProject struct {
+	Name     string
+	URL      string
+	Owners   []string
+	Branches map[string]DeadBranch
+}
+
+type DeadAuthor struct {
+	Name     string
+	Branches map[int][]string
+	Projects map[int]DeadProject
+}
+
+type DeadResults struct {
+	Projects map[int]DeadProject
+	Authors  map[string]DeadAuthor
+}
