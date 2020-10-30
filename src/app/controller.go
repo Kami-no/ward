@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Kami-no/ward/src/app/client"
 	"github.com/Kami-no/ward/src/config"
 	"log"
 	"net/http"
@@ -10,11 +11,13 @@ import (
 
 type MRController struct {
 	Config *config.Config
+	Client client.GitlabClient
 }
 
-func NewMRController(config *config.Config) *MRController {
+func NewMRController(config *config.Config, client client.GitlabClient) *MRController {
 	return &MRController{
 		Config: config,
+		Client: client,
 	}
 }
 
@@ -23,7 +26,7 @@ func (c *MRController) Handler(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (c *MRController) HandleMR(w http.ResponseWriter, _ *http.Request) {
-	mrs, err := checkPrjRequests(c.Config, c.Config.Projects, "any")
+	mrs, err := c.Client.CheckPrjRequests(c.Config.Projects, "any")
 	if err != nil {
 		log.Println(err)
 	}
@@ -37,7 +40,7 @@ func (c *MRController) HandleMR(w http.ResponseWriter, _ *http.Request) {
 
 func (c *MRController) HandleMROpened(w http.ResponseWriter, _ *http.Request) {
 
-	mrs, err := checkPrjRequests(c.Config, c.Config.Projects, "opened")
+	mrs, err := c.Client.CheckPrjRequests(c.Config.Projects, "opened")
 	if err != nil {
 		log.Println(err)
 	}
@@ -48,7 +51,7 @@ func (c *MRController) HandleMROpened(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (c *MRController) HandleMRMerged(w http.ResponseWriter, _ *http.Request) {
-	mrs, err := checkPrjRequests(c.Config, c.Config.Projects, "merged")
+	mrs, err := c.Client.CheckPrjRequests(c.Config.Projects, "merged")
 	if err != nil {
 		log.Println(err)
 	}
@@ -63,7 +66,7 @@ func (c *MRController) HandleMRMerged(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (c *MRController) HandleMRApply(w http.ResponseWriter, _ *http.Request) {
-	data := DetectMR(c.Config)
+	data := DetectMR(c.Client, c.Config)
 
 	out, _ := json.Marshal(data)
 	output := fmt.Sprintf("%v", string(out))

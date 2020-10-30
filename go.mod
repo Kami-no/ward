@@ -7,6 +7,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.7 // indirect
 	github.com/prprprus/scheduler v0.5.0
+	github.com/stretchr/testify v1.4.0
 	github.com/xanzy/go-gitlab v0.38.1
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0 // indirect
 	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb // indirect
