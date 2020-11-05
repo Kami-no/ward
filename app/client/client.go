@@ -2,13 +2,15 @@ package client
 
 import (
 	"fmt"
-	"github.com/Kami-no/ward/src/app/client/gitlabclient"
-	"github.com/Kami-no/ward/src/app/ldap"
-	"github.com/Kami-no/ward/src/config"
-	"github.com/xanzy/go-gitlab"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/xanzy/go-gitlab"
+
+	"github.com/Kami-no/ward/app/client/gitlabclient"
+	"github.com/Kami-no/ward/app/ldap"
+	"github.com/Kami-no/ward/config"
 )
 
 type GitlabClient interface {

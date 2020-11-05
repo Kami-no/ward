@@ -1,13 +1,15 @@
 package client
 
 import (
-	"github.com/Kami-no/ward/src/app/client/gitlabclient/clientmock"
-	"github.com/Kami-no/ward/src/app/ldap"
-	"github.com/Kami-no/ward/src/config"
+	"testing"
+
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"github.com/xanzy/go-gitlab"
-	"testing"
+
+	"github.com/Kami-no/ward/app/client/gitlabclient/clientmock"
+	"github.com/Kami-no/ward/app/ldap"
+	"github.com/Kami-no/ward/config"
 )
 
 type ClientTest struct {

@@ -1,9 +1,10 @@
 package clientmock
 
 import (
-	"github.com/Kami-no/ward/src/app/client/gitlabclient"
 	"github.com/stretchr/testify/mock"
 	"github.com/xanzy/go-gitlab"
+
+	"github.com/Kami-no/ward/app/client/gitlabclient"
 )
 
 type ClientMock struct {

@@ -2,9 +2,10 @@ package ldap
 
 import (
 	"fmt"
-	"github.com/Kami-no/ward/src/config"
 
 	"github.com/go-ldap/ldap/v3"
+
+	"github.com/Kami-no/ward/config"
 )
 
 type Service interface {

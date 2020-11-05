@@ -1,9 +1,10 @@
 package app
 
 import (
-	"github.com/Kami-no/ward/src/app/client"
-	"github.com/Kami-no/ward/src/config"
 	"log"
+
+	"github.com/Kami-no/ward/app/client"
+	"github.com/Kami-no/ward/config"
 )
 
 func DetectDeadBrunches(client client.GitlabClient, cfg *config.Config) {
