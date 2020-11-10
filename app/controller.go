@@ -3,11 +3,12 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Kami-no/ward/src/app/client"
-	"github.com/Kami-no/ward/src/app/ldap"
-	"github.com/Kami-no/ward/src/config"
 	"log"
 	"net/http"
+
+	"github.com/Kami-no/ward/app/client"
+	"github.com/Kami-no/ward/app/ldap"
+	"github.com/Kami-no/ward/config"
 )
 
 type MRController struct {

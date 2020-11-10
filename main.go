@@ -3,12 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/Kami-no/ward/src/app"
-	"github.com/Kami-no/ward/src/app/client"
-	"github.com/Kami-no/ward/src/app/client/gitlabclient"
-	"github.com/Kami-no/ward/src/app/ldap"
-	"github.com/Kami-no/ward/src/config"
-	"github.com/xanzy/go-gitlab"
 	"log"
 	"net/http"
 	"os"
@@ -16,6 +10,13 @@ import (
 	"time"
 
 	"github.com/prprprus/scheduler"
+
+	"github.com/Kami-no/ward/app"
+	"github.com/Kami-no/ward/app/client"
+	"github.com/Kami-no/ward/app/client/gitlabclient"
+	"github.com/Kami-no/ward/app/ldap"
+	"github.com/Kami-no/ward/config"
+	"github.com/xanzy/go-gitlab"
 )
 
 func main() {

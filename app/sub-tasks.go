@@ -3,12 +3,14 @@ package app
 import (
 	"bytes"
 	"fmt"
-	"github.com/Kami-no/ward/src/app/client"
-	"github.com/Kami-no/ward/src/app/ldap"
-	"github.com/Kami-no/ward/src/config"
-	"github.com/xanzy/go-gitlab"
 	"html/template"
 	"log"
+
+	"github.com/xanzy/go-gitlab"
+
+	"github.com/Kami-no/ward/app/client"
+	"github.com/Kami-no/ward/app/ldap"
+	"github.com/Kami-no/ward/config"
 )
 
 type MrAction struct {

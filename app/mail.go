@@ -2,9 +2,10 @@ package app
 
 import (
 	"fmt"
-	"github.com/Kami-no/ward/src/config"
 
 	"gopkg.in/mail.v2"
+
+	"github.com/Kami-no/ward/config"
 )
 
 func mailSend(cfg *config.Config, rcpt []string, subj string, msg string) error {

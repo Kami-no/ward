@@ -1,3 +1,10 @@
 .*
 Dockerfile
 ward
+.*
+README.md
+LICENSE
+
+config_example.yaml
+ward
+ward.service
