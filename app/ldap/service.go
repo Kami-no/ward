@@ -23,6 +23,7 @@ func NewLdapServiceImpl(cfg *config.Config) *serviceImpl {
 	return &serviceImpl{cfg: cfg}
 }
 
+// Check if email exists in LDAP
 func (s *serviceImpl) Check(email string) bool {
 	filter := fmt.Sprintf("(mail=%v)", email)
 
@@ -31,6 +32,7 @@ func (s *serviceImpl) Check(email string) bool {
 	return len(mail) > 0
 }
 
+// Get list of emails by usernames
 func (s *serviceImpl) ListMails(users []string) []string {
 	var filter string
 
@@ -47,6 +49,7 @@ func (s *serviceImpl) ListMails(users []string) []string {
 	return mail
 }
 
+// Send request to LDAP
 func (s *serviceImpl) ldapRequest(filter string) []string {
 	var mail []string
 

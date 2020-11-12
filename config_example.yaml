@@ -1,5 +1,6 @@
 ---
 SMail: user@example.com
+NotifyBy: mail  # mail or webhook
 
 Credentials:
   User: user
@@ -16,6 +17,7 @@ Endpoints:
     User: user
     Password: qwerty
   GitLab: https://git.example.com
+  Webhook: http://webhook.example.com
 Awards:
   Like: thumbsup
   Dislike: thumbsdown

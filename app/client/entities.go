@@ -5,6 +5,7 @@ type MrProject struct {
 }
 
 type MergeRequest struct {
+	Author   string
 	Name     string
 	Path     string
 	MergedBy string
