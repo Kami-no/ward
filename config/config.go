@@ -10,7 +10,8 @@ import (
 const fileName = "config.yaml"
 
 type Config struct {
-	SMail string `yaml:"SMail"`
+	SMail    string `yaml:"SMail"`
+	NotifyBy string `yaml:"NotifyBy"`
 
 	Credentials struct {
 		User     string `yaml:"User"`
@@ -29,7 +30,8 @@ type Config struct {
 			User     string `yaml:"User"`
 			Password string `yaml:"Password"`
 		} `yaml:"SMTP"`
-		GitLab string `yaml:"GitLab"`
+		GitLab  string `yaml:"GitLab"`
+		Webhook string `yaml:"Webhook"`
 	} `yaml:"Endpoints"`
 	Awards struct {
 		Like         string `yaml:"Like"`

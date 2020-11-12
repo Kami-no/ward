@@ -19,6 +19,8 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
+const listen = ":8081"
+
 func main() {
 	log.SetOutput(os.Stdout)
 
@@ -50,12 +52,13 @@ func main() {
 	http.HandleFunc("/dead/letter", controller.HandleDeadLetter)
 
 	server := &http.Server{
-		Addr:         ":8081",
+		Addr:         listen,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 	go func() {
+		log.Printf("Starting HTTP server at %v", listen)
 		log.Fatal(server.ListenAndServe())
 	}()
 
