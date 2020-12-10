@@ -21,6 +21,7 @@ type MrAction struct {
 	MergedBy string
 	Path     string
 	State    bool
+	Name     string
 	Author   string
 }
 
@@ -66,6 +67,7 @@ func evalOpenedRequests(MRProjects map[int]client.MrProject) []MrAction {
 			if mr.Awards.Like && !mr.Awards.Dislike {
 				if mr.Awards.NotReady != 0 {
 					action := MrAction{
+						Name:   mr.Name,
 						Author: mr.Author,
 						Path:   mr.Path,
 						Pid:    pid,
@@ -77,6 +79,7 @@ func evalOpenedRequests(MRProjects map[int]client.MrProject) []MrAction {
 				}
 				if mr.Awards.Ready == 0 {
 					action := MrAction{
+						Name:   mr.Name,
 						Author: mr.Author,
 						Path:   mr.Path,
 						Pid:    pid,
@@ -89,6 +92,7 @@ func evalOpenedRequests(MRProjects map[int]client.MrProject) []MrAction {
 			} else {
 				if mr.Awards.Ready != 0 {
 					action := MrAction{
+						Name:   mr.Name,
 						Author: mr.Author,
 						Path:   mr.Path,
 						Pid:    pid,
@@ -100,6 +104,7 @@ func evalOpenedRequests(MRProjects map[int]client.MrProject) []MrAction {
 				}
 				if mr.Awards.NotReady == 0 {
 					action := MrAction{
+						Name:     mr.Name,
 						Author:   mr.Author,
 						Path:     mr.Path,
 						Pid:      pid,
@@ -114,6 +119,7 @@ func evalOpenedRequests(MRProjects map[int]client.MrProject) []MrAction {
 
 			if mr.Awards.NonCompliant != 0 {
 				action := MrAction{
+					Name:   mr.Name,
 					Author: mr.Author,
 					Path:   mr.Path,
 					Pid:    pid,
@@ -210,7 +216,7 @@ func processMR(ldapService ldap.Service, cfg *config.Config, actions []MrAction)
 					rcpt = append(rcpt, action.Author)
 
 					rSubj := fmt.Sprintf("Merge MR %v@%v", action.Mid, action.Pid)
-					rMsg := "Merge request has received all necessary approves and ready to be merged."
+					rMsg := fmt.Sprintf("Merge request has received all necessary approves and ready to be merged.\n\n%v", action.Name)
 
 					if err := webhookSend(cfg.Endpoints.Webhook, rcpt, rSubj, rMsg, action.Path); err != nil {
 						log.Printf("Failed to post webhook for author: %v", err)
