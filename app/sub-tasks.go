@@ -239,7 +239,7 @@ func processMR(ldapService ldap.Service, cfg *config.Config, actions []MrAction)
 						reviewers = append(reviewers, team...)
 					}
 					rSubj := fmt.Sprintf("Review MR %v@%v", action.Mid, action.Pid)
-					rMsg := "Merge request is waiting for code review."
+					rMsg := fmt.Sprintf("Merge request is waiting for code review.\n\n%v", action.Name)
 
 					if err := webhookSend(cfg.Endpoints.Webhook, reviewers, rSubj, rMsg, action.Path); err != nil {
 						log.Printf("Failed to post webhook for reviewers: %v", err)
