@@ -174,6 +174,8 @@ func (c *client) CheckPrjRequests(projects map[int]*config.Project, list string)
 			MRequest.Awards.Like = mrLike
 
 			MRequest.Path = mr.WebURL
+			MRequest.Name = mr.Title
+			MRequest.Author = mr.Author.Username
 
 			if mr.MergedBy != nil {
 				MRequest.MergedBy = mr.MergedBy.Username
