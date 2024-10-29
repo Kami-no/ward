@@ -1,5 +1,8 @@
 # build stage
-FROM golang:1.19-alpine3.15 AS build-env
+FROM golang:1.23-alpine3.15 AS build-env
+# hadolint ignore=DL3018
+RUN apk add --no-cache git
+
 WORKDIR /opt
 
 COPY ["go.mod", "go.sum", "./"]
